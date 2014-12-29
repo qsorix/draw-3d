@@ -63,9 +63,6 @@ def pick_plane_facing_camera(alpha, beta):
     angle_y = abs(funcs.cos_angle(camera, ny))
     angle_z = abs(funcs.cos_angle(camera, nz))
 
-    print("Camera dir:", camera.x, camera.y, camera.z)
-    print("Angles:    ", angle_x, angle_y, angle_z)
-
     # cos is max for min angle
     angle_min = max(angle_x, angle_y, angle_z)
     if angle_min == angle_x:
@@ -90,6 +87,22 @@ class ToolLine(Tool):
         self.wnd = wnd
         self.segment_start = None
 
+    def _snap_to_point(self, mx, my):
+        tolerance = 8
+        wnd = self.wnd
+        for s in wnd.segments:
+            a = wnd._project(s.a)
+            b = wnd._project(s.b)
+            if a and b:
+                x0, y0 = wnd._to_zero(a)
+                x1, y1 = wnd._to_zero(b)
+                if abs(x0-mx) < tolerance and abs(y0-my) < tolerance:
+                    return s.a
+
+                if abs(x1-mx) < tolerance and abs(y1-my) < tolerance:
+                    return s.b
+        return None
+
     def activate(self):
         pygame.mouse.set_cursor((8, 8), (4, 4), (24, 24, 24, 231, 231, 24, 24, 24), (0, 0, 0, 0, 0, 0, 0, 0))
 
@@ -98,18 +111,9 @@ class ToolLine(Tool):
         mx, my = pos
 
         if not self.segment_start:
-            for s in wnd.segments:
-                a = wnd._project(s.a)
-                b = wnd._project(s.b)
-                if a and b:
-                    x0, y0 = wnd._to_zero(a)
-                    x1, y1 = wnd._to_zero(b)
-                    if abs(x0-mx) < 5 and abs(y0-my) < 5:
-                        self.segment_start = s.a
-                        break
-                    if abs(x1-mx) < 5 and abs(y1-my) < 5:
-                        self.segment_start = s.b
-                        break
+            p = self._snap_to_point(mx, my)
+            if p:
+                self.segment_start = p
         else:
             self.wnd.drawn_segments = []
             self.wnd.segments.append(S(self.segment_start, self.segment_end))
@@ -121,30 +125,34 @@ class ToolLine(Tool):
         if not self.segment_start:
             return
 
-        D = self.wnd.D
-
         mx, my = pos
-        mx = mx - self.wnd.w/2
-        my = -my + self.wnd.h/2
 
-        z = self.segment_start.z
+        end = self._snap_to_point(mx, my)
 
-        x = mx*z/D
-        y = my*z/D
+        if not end:
+            D = self.wnd.D
 
-        x, y, z = funcs.unrotate(x, y, z, self.wnd.camera_angle, self.wnd.camera_angle_vert)
+            mx = mx - self.wnd.w/2
+            my = -my + self.wnd.h/2
 
-        x += self.wnd.camera.x
-        y += self.wnd.camera.y
-        z += self.wnd.camera.z
+            z = self.segment_start.z
 
-        mouse_points_at = P(x, y, z)
-        view_direction = vector_from_to(self.wnd.camera, mouse_points_at)
+            x = mx*z/D
+            y = my*z/D
 
-        N = pick_plane_facing_camera(self.wnd.camera_angle,
-                                     self.wnd.camera_angle_vert)
+            x, y, z = funcs.unrotate(x, y, z, self.wnd.camera_angle, self.wnd.camera_angle_vert)
 
-        end = vector_plane_intersection(self.wnd.camera, view_direction, self.segment_start, N)
+            x += self.wnd.camera.x
+            y += self.wnd.camera.y
+            z += self.wnd.camera.z
+
+            mouse_points_at = P(x, y, z)
+            view_direction = vector_from_to(self.wnd.camera, mouse_points_at)
+
+            N = pick_plane_facing_camera(self.wnd.camera_angle,
+                                         self.wnd.camera_angle_vert)
+
+            end = vector_plane_intersection(self.wnd.camera, view_direction, self.segment_start, N)
 
         if end:
             self.segment_end = end
@@ -198,8 +206,8 @@ class Starter(PygameHelper):
                               fill=((255,255,255)))
 
         self.D = 500 # distance eye-screen in pixels
-        self.camera = P(0, 0, 0)
-        self.camera_angle = 0
+        self.camera = P(-61, 35, -117)
+        self.camera_angle = 0.4
         self.camera_angle_vert = 0
         self.pressed = set()
 
@@ -301,7 +309,6 @@ class Starter(PygameHelper):
     def _draw_cam_face(self):
         N = pick_plane_facing_camera(self.camera_angle,
                                      self.camera_angle_vert)
-        print ("N: ", N.x, N.y, N.z)
         if N.x:
             color = red
         if N.y:
@@ -345,9 +352,9 @@ class Starter(PygameHelper):
         if 100 in self.pressed: # D
             self.camera_angle += 0.03
         if 115 in self.pressed: # S
-            self.camera_angle_vert -= 0.03
-        if 119 in self.pressed: # W
             self.camera_angle_vert += 0.03
+        if 119 in self.pressed: # W
+            self.camera_angle_vert -= 0.03
 
         if 275 in self.pressed: # right
             self._move_camera(1, 0, 0)
