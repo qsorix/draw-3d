@@ -349,6 +349,9 @@ class Starter(PygameHelper):
         self.segments.append(S(P(0, -1, 0), P(0, 1, 0)))
         self.segments.append(S(P(0, 0, -1), P(0, 0, 1)))
 
+    def _delete_active_segments(self):
+        self.segments = [s for s in s.segments if not s.active]
+
     def _set_tool(self, tool):
         self.tool = tool
         self.tool.activate()
@@ -551,6 +554,9 @@ class Starter(PygameHelper):
             self._move_camera(1, 0, 0)
         if 276 in self.pressed: # left
             self._move_camera(-1, 0, 0)
+
+        if 127 in self.pressed: # delete
+            self._delete_active_segments()
 
         if 280 in self.pressed: # page-up
             self.D += 10.0
