@@ -3,7 +3,7 @@
 import pygame
 import math
 import funcs
-from funcs import Vector, vector_from_to
+from funcs import Vector, vector_from_to, P
 from pygamehelper import PygameHelper
 
 black = (0, 0, 0)
@@ -23,12 +23,6 @@ class S:
         self.b = end
         self.color = color
         self.active = False
-
-class P:
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
 
 class Wall:
     def __init__(self, vertices):
@@ -112,15 +106,19 @@ class ToolLine(Tool):
         self.wnd = wnd
         self.segment_start = None
 
-    def _snap_to_point(self, mx, my):
-        tolerance = 8
+    def _can_snap_to(self, mx, my, p):
         wnd = self.wnd
-        for p in wnd.points_iter():
-            a = wnd._project(p)
-            if a:
-                x0, y0 = wnd._to_zero(a)
-                if abs(x0-mx) < tolerance and abs(y0-my) < tolerance:
-                    return p
+        tolerance = 8
+        a = wnd._project(p)
+        if a:
+            x0, y0 = wnd._to_zero(a)
+            if abs(x0-mx) < tolerance and abs(y0-my) < tolerance:
+                return p
+
+    def _snap_to_point(self, mx, my):
+        for p in self.wnd.points_iter():
+            if self._can_snap_to(mx, my, p):
+                return p
 
         return None
 
@@ -240,25 +238,26 @@ class ToolLine(Tool):
                 normal_plane = funcs.Plane(vector_from_to(self.segment_end,
                                                           self.segment_start),
                                            self.segment_end)
+
+                draw_dir = vector_from_to(self.segment_start, self.segment_end)
+
+                min_snap_distance = False
                 for p in self.wnd.points_iter():
-                    d = funcs.point_to_plane_distance(normal_plane, p)
+                    pp = funcs.project_point_onto_vector(p, self.segment_start, draw_dir)
+                    if not pp:
+                        continue
 
-                    if abs(d) < 2:
-                        reference_point_plane = funcs.Plane(vector_from_to(self.segment_end, self.segment_start), p)
+                    if self._can_snap_to(mx, my, pp):
+                        snap_distance = funcs.length(vector_from_to(pp, p))
+                        if not min_snap_distance or min_snap_distance > snap_distance:
+                            min_snap_distance = snap_distance
+                        
+                            self.segment_end = pp
+                            self.wnd.drawn_segments = [S(self.segment_start,
+                                                         self.segment_end, color)]
 
-                        snaps_to = vector_plane_intersection(self.segment_start,
-                                                             vector_from_to(self.segment_start,
-                                                                            self.segment_end),
-                                                             p,
-                                                             vector_from_to(self.segment_start,
-                                                                            self.segment_end))
-                        self.segment_end = snaps_to
-                        self.wnd.drawn_segments = [S(self.segment_start,
-                                                     self.segment_end, color)]
-
-                        self.wnd.drawn_segments.append(
-                            S(self.segment_end, p))
-                        break
+                            self.wnd.drawn_segments.append(
+                                S(self.segment_end, p, gray))
 
 
 class ToolSelect(Tool):

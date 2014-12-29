@@ -1,10 +1,29 @@
 import math
 
+class P:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def __add__(self, vector):
+        return P(self.x + vector.x,
+                 self.y + vector.y,
+                 self.z + vector.z)
+
 class Vector:
     def __init__(self, x, y, z):
         self.x = x
         self.y = y
         self.z = z
+
+    def __mul__(self, scalar):
+        assert(isinstance(scalar, int) or isinstance(scalar, float))
+        return Vector(self.x * scalar,
+                      self.y * scalar,
+                      self.z * scalar)
+
+    __rmul__ = __mul__
 
 class Plane:
     def __init__(self, normal, v0):
@@ -17,6 +36,17 @@ def vector_from_to(a, b):
 def point_to_plane_distance(plane, point):
     sn = -dot(plane.normal, vector_from_to(plane.v0, point))
     return sn
+
+def unit(v):
+    l = length(v)
+    return Vector(v.x/l, v.y/l, v.z/l)
+
+def project_point_onto_vector(point, v0, vector):
+    if length(vector) == 0:
+        return None
+    p = vector_from_to(v0, point)
+    return v0 + unit(vector)*(dot(vector, p)/length(vector))
+
 
 # distance from a segment to a point
 def dist(x1,y1, x2,y2, x3,y3): # x3,y3 is the point
@@ -96,9 +126,6 @@ def cross(a, b):
 def length(a):
     return math.sqrt(dot(a,a))
 
-def unit(v):
-    l = length(v)
-    return Vector(v.x/l, v.y/l, v.z/l)
 
 
 def cos_angle(a, b):
