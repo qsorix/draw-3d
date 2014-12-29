@@ -309,10 +309,7 @@ class Starter(PygameHelper):
 
         #print ("Camera: ", self.camera.x, self.camera.y, self.camera.z)
 
-
-    def _project(self, p):
-        D = self.D
-
+    def _camera_transform(self, p):
         x = p.x
         y = p.y
         z = p.z
@@ -328,16 +325,38 @@ class Starter(PygameHelper):
         x, y, z = funcs.rotate(x, y, z,
                                self.camera_angle,
                                self.camera_angle_vert)
+        return x, y, z
+
+    def _project(self, p):
+        x, y, z = self._camera_transform(p)
 
         if (z <= 0.0):
             return None
 
-        return [int(D/float(z)*x),
-                int(D/float(z)*y)]
+        return [int(self.D/float(z)*x),
+                int(self.D/float(z)*y)]
+
+    def _project_end(self, a, b):
+        p1 = P(*self._camera_transform(a))
+        p2 = P(*self._camera_transform(b))
+
+        # p1 is in the view, p2 is behind
+        # instead of p2, we'll use the point where it intersect camera's plane
+
+        p = vector_plane_intersection(p1, vector_from_to(p1, p2),
+                                      P(0,0,1), Vector(0,0,1))
+
+        return [int(self.D/float(p.z)*p.x),
+                int(self.D/float(p.z)*p.y)]
 
     def _draw_segment(self, s):
         a = self._project(s.a)
         b = self._project(s.b)
+        if (a and not b):
+            b = self._project_end(s.a, s.b)
+        if (b and not a):
+            a = self._project_end(s.b, s.a)
+
         if a and b:
             if s.active:
                 width=3
