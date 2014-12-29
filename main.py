@@ -150,8 +150,6 @@ class Starter(PygameHelper):
 
     def _project(self, p):
         D = self.D
-        cos = math.cos(self.camera_angle)
-        sin = math.sin(self.camera_angle)
 
         x = p.x
         y = p.y
@@ -165,20 +163,9 @@ class Starter(PygameHelper):
         y = y - yu
         z = z - zu
 
-        px = x * cos - z * sin
-        pz = x * sin + z * cos
-
-        x = px
-        z = pz
-
-        cos_th = math.cos(self.camera_angle_vert)
-        sin_th = math.sin(self.camera_angle_vert)
-
-        pz = z * cos_th - y * sin_th
-        py = z * sin_th + y * cos_th
-
-        z = pz
-        y = py
+        x, y, z = funcs.rotate(x, y, z,
+                               self.camera_angle,
+                               self.camera_angle_vert)
 
         if (z <= 0.0):
             return None

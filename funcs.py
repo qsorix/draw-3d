@@ -28,3 +28,21 @@ def dist(x1,y1, x2,y2, x3,y3): # x3,y3 is the point
     dist = math.sqrt(dx*dx + dy*dy)
 
     return dist
+
+def rotate(x, y, z, alpha, beta):
+    cos = math.cos
+    sin = math.sin
+
+    xr = x * cos(alpha) - z * sin(alpha)
+    yr = y
+    zr = x * sin(alpha) + z * cos(alpha)
+
+    x, y, z = xr, yr, zr
+
+    xr = x
+    yr = z * sin(beta) + y * cos(beta)
+    zr = z * cos(beta) - y * sin(beta)
+
+    x, y, z = xr, yr, zr
+
+    return x, y, z
