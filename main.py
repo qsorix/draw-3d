@@ -73,6 +73,11 @@ def pick_plane_facing_camera(alpha, beta):
     if angle_min == angle_z:
         return nz
 
+def pick_plane_not_facing_camera(alpha, beta):
+    n = pick_plane_facing_camera(alpha, beta)
+
+    return Vector(n.y, n.z, n.x)
+
 class Tool:
     def mouseUp(self, button, pos):
         pass
@@ -104,6 +109,44 @@ class ToolLine(Tool):
                     return s.b
         return None
 
+    def _snap_to_axis(self, mx, my):
+        tolerance = 10
+        mouse_points_at = self._mouse_points_at(mx, my)
+        view_direction = vector_from_to(self.wnd.camera, mouse_points_at)
+
+        N1 = pick_plane_facing_camera(self.wnd.camera_angle,
+                                      self.wnd.camera_angle_vert)
+        N2 = pick_plane_not_facing_camera(self.wnd.camera_angle,
+                                          self.wnd.camera_angle_vert)
+
+        end1 = vector_plane_intersection(self.wnd.camera, view_direction,
+                                         self.segment_start, N1)
+        end2 = vector_plane_intersection(self.wnd.camera, view_direction,
+                                         self.segment_start, N2)
+
+        points = []
+        if end1:
+            points.extend([
+                    P(end1.x, self.segment_start.y, self.segment_start.z),
+                    P(self.segment_start.x, end1.y, self.segment_start.z),
+                    P(self.segment_start.x, self.segment_start.y, end1.z),
+                ])
+
+        if end2:
+            points.extend([
+                P(end2.x, self.segment_start.y, self.segment_start.z),
+                P(self.segment_start.x, end2.y, self.segment_start.z),
+                P(self.segment_start.x, self.segment_start.y, end2.z)])
+
+        for p in points:
+            pp = self.wnd._project(p)
+            if pp:
+                x,y = self.wnd._to_zero(pp)
+                if abs(x-mx) < tolerance and abs(y-my) < tolerance:
+                    return p
+
+        return None
+
     def _mouse_points_at(self, mx, my):
         D = self.wnd.D
 
@@ -124,7 +167,6 @@ class ToolLine(Tool):
         return P(x, y, z)
 
     def _free_point(self, mx, my):
-
         mouse_points_at = self._mouse_points_at(mx, my)
         view_direction = vector_from_to(self.wnd.camera, mouse_points_at)
 
@@ -163,7 +205,12 @@ class ToolLine(Tool):
         if end:
             snapped = True
 
-        else:
+        if not end:
+            end = self._snap_to_axis(mx, my)
+        if end:
+            snapped = True
+
+        if not snapped:
             end = self._free_point(mx, my)
 
         if end:
@@ -173,19 +220,6 @@ class ToolLine(Tool):
             self.segment_end = end
             self.wnd.drawn_segments = [S(self.segment_start, self.segment_end,
                                          color)]
-
-            self.wnd.drawn_segments.append(S(self.segment_start,
-                                             P(self.segment_end.x,
-                                               self.segment_start.y,
-                                               self.segment_start.z), red))
-            self.wnd.drawn_segments.append(S(self.segment_start,
-                                             P(self.segment_start.x,
-                                               self.segment_end.y,
-                                               self.segment_start.z), blue))
-            self.wnd.drawn_segments.append(S(self.segment_start,
-                                             P(self.segment_start.x,
-                                               self.segment_start.y,
-                                               self.segment_end.z), green))
 
 class ToolSelect(Tool):
     def __init__(self, wnd):
@@ -275,7 +309,7 @@ class Starter(PygameHelper):
         self.camera.y += dy
         self.camera.z += dz
 
-        print ("Camera: ", self.camera.x, self.camera.y, self.camera.z)
+        #print ("Camera: ", self.camera.x, self.camera.y, self.camera.z)
 
 
     def _project(self, p):
