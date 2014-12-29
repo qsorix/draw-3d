@@ -1,5 +1,11 @@
 import math
 
+class Vector:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
 def dist(x1,y1, x2,y2, x3,y3): # x3,y3 is the point
     px = x2-x1
     py = y2-y1
@@ -70,8 +76,18 @@ def unrotate(x, y, z, alpha, beta):
 def dot(a, b):
     return a.x*b.x + a.y*b.y + a.z*b.z
 
+def cross(a, b):
+    return Vector(a.y*b.z - a.z*b.y,
+                  a.z*b.x - a.x*b.z,
+                  a.x*b.y - a.y*b.x)
+
 def length(a):
     return math.sqrt(dot(a,a))
+
+def unit(v):
+    l = length(v)
+    return Vector(v.x/l, v.y/l, v.z/l)
+
 
 def cos_angle(a, b):
     return dot(a, b) / (length(a)*length(b))

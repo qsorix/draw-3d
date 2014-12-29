@@ -3,6 +3,7 @@
 import pygame
 import math
 import funcs
+from funcs import Vector
 from pygamehelper import PygameHelper
 
 black = (0, 0, 0)
@@ -11,12 +12,6 @@ red = (255, 100, 100)
 blue= (100, 100, 255)
 green = (100, 255, 100)
 purple = (255, 100, 255)
-
-class Vector:
-    def __init__(self, x, y, z):
-        self.x = x
-        self.y = y
-        self.z = z
 
 class S:
     def __init__(self, start, end, color = black):
@@ -34,6 +29,12 @@ class P:
 class Wall:
     def __init__(self, vertices):
         self.vertices = vertices
+
+    def normal(self):
+        return funcs.cross(vector_from_to(self.vertices[0],
+                                          self.vertices[1]),
+                           vector_from_to(self.vertices[1],
+                                          self.vertices[2]))
 
 def vector_from_to(a, b):
     return Vector(b.x-a.x, b.y-a.y, b.z-a.z)
@@ -260,8 +261,7 @@ class ToolSelect(Tool):
                     s.active = True
                     break
 
-def put_cube(s, x, y, z, c):
-    w = 10
+def put_cube(s, walls, x, y, z, w, c):
     s.append(S(P(x, y, z), P(x+w, y, z), c))
     s.append(S(P(x, y, z), P(x, y+w, z), c))
     s.append(S(P(x, y+w, z), P(x+w, y+w, z), c))
@@ -276,6 +276,21 @@ def put_cube(s, x, y, z, c):
     s.append(S(P(x, y, z+w), P(x, y+w, z+w), c))
     s.append(S(P(x, y+w, z+w), P(x+w, y+w, z+w), c))
     s.append(S(P(x+w, y, z+w), P(x+w, y+w, z+w), c))
+
+    walls.append(Wall([P(x, y, z),
+                       P(x, y+w, z),
+                       P(x+w, y+w, z),
+                       P(x+w, y, z)]))
+
+    walls.append(Wall([P(x, y, z),
+                       P(x, y+w, z),
+                       P(x, y+w, z+w),
+                       P(x, y, z+w)]))
+
+    walls.append(Wall([P(x, y, z),
+                       P(x+w, y, z),
+                       P(x+w, y, z+w),
+                       P(x, y, z+w)]))
 
 class Starter(PygameHelper):
     def __init__(self):
@@ -295,15 +310,11 @@ class Starter(PygameHelper):
         self.drawn_segments = []
 
         self.walls = []
-        self.walls.append(Wall([P(0, 0, 0),
-                                P(0, 30, 0),
-                                P(30, 30, 0),
-                                P(30, 0, 0)]))
 
-        put_cube(self.segments, 40, 0, 40, red)
-        put_cube(self.segments, -40, 0, 40, green)
-        put_cube(self.segments, 40,  0, -40, blue)
-        put_cube(self.segments, -40,  0, -40, black)
+        put_cube(self.segments, self.walls, 40, 0, 40, 20, red)
+        put_cube(self.segments, self.walls, -40, 0, 40, 20, green)
+        put_cube(self.segments, self.walls, 40,  0, -40, 20, blue)
+        put_cube(self.segments, self.walls, -40,  0, -40, 20, black)
 
         for a in range(0,10,10):
             for b in range(0,10,10):
@@ -385,7 +396,9 @@ class Starter(PygameHelper):
         if a and b:
             ax, ay = self._to_zero(a)
             bx, by = self._to_zero(b)
-            return S(P(ax, ay, a.z), P(bx, by, b.z), color=s.color)
+            res = S(P(ax, ay, a.z), P(bx, by, b.z), color=s.color)
+            res.active = s.active
+            return res
 
     def _draw_segment(self, s):
         if not s:
@@ -409,22 +422,33 @@ class Starter(PygameHelper):
         points = []
         for v in w.vertices:
             p = self._project(v)
-            if not v:
+            if not p:
                 return
             px, py = self._to_zero(p)
             points.append(P(px, py, p.z))
         return Wall(points)
 
+    def _pick_wall_color(self, w):
+        light = funcs.unit(Vector(1, 1, -1))
+        n = funcs.unit(w.normal())
+        brightness = abs(funcs.dot(light, n))
+
+        c = 130 + 90*brightness
+
+        return (c, c, c)
+
     def _draw_wall(self, w):
         if not w:
             return
+
+        color = self._pick_wall_color(w)
 
         points = []
         for v in w.vertices:
             points.append((v.x, v.y))
 
         pygame.draw.polygon(self.screen,
-                            gray,
+                            color,
                             points)
 
     def _to_zero(self, p):
@@ -512,7 +536,7 @@ class Starter(PygameHelper):
 
     def draw(self):
         self.screen.fill((255,255,255))
-        self._draw_zero()
+        #self._draw_zero()
         self._draw_cam_pos()
         self._draw_cam_face()
 
