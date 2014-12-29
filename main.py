@@ -9,6 +9,7 @@ red = (255, 100, 100)
 blue= (100, 100, 255)
 black = (0, 0, 0)
 green = (100, 255, 100)
+purple = (255, 100, 255)
 
 class Vector:
     def __init__(self, x, y, z):
@@ -103,6 +104,36 @@ class ToolLine(Tool):
                     return s.b
         return None
 
+    def _mouse_points_at(self, mx, my):
+        D = self.wnd.D
+
+        mx = mx - self.wnd.w/2
+        my = -my + self.wnd.h/2
+
+        z = self.segment_start.z
+
+        x = mx*z/D
+        y = my*z/D
+
+        x, y, z = funcs.unrotate(x, y, z, self.wnd.camera_angle, self.wnd.camera_angle_vert)
+
+        x += self.wnd.camera.x
+        y += self.wnd.camera.y
+        z += self.wnd.camera.z
+
+        return P(x, y, z)
+
+    def _free_point(self, mx, my):
+
+        mouse_points_at = self._mouse_points_at(mx, my)
+        view_direction = vector_from_to(self.wnd.camera, mouse_points_at)
+
+        N = pick_plane_facing_camera(self.wnd.camera_angle,
+                                     self.wnd.camera_angle_vert)
+
+        end = vector_plane_intersection(self.wnd.camera, view_direction, self.segment_start, N)
+        return end
+
     def activate(self):
         pygame.mouse.set_cursor((8, 8), (4, 4), (24, 24, 24, 231, 231, 24, 24, 24), (0, 0, 0, 0, 0, 0, 0, 0))
 
@@ -127,36 +158,34 @@ class ToolLine(Tool):
 
         mx, my = pos
 
+        snapped = False
         end = self._snap_to_point(mx, my)
+        if end:
+            snapped = True
 
-        if not end:
-            D = self.wnd.D
-
-            mx = mx - self.wnd.w/2
-            my = -my + self.wnd.h/2
-
-            z = self.segment_start.z
-
-            x = mx*z/D
-            y = my*z/D
-
-            x, y, z = funcs.unrotate(x, y, z, self.wnd.camera_angle, self.wnd.camera_angle_vert)
-
-            x += self.wnd.camera.x
-            y += self.wnd.camera.y
-            z += self.wnd.camera.z
-
-            mouse_points_at = P(x, y, z)
-            view_direction = vector_from_to(self.wnd.camera, mouse_points_at)
-
-            N = pick_plane_facing_camera(self.wnd.camera_angle,
-                                         self.wnd.camera_angle_vert)
-
-            end = vector_plane_intersection(self.wnd.camera, view_direction, self.segment_start, N)
+        else:
+            end = self._free_point(mx, my)
 
         if end:
+            color = black
+            if snapped:
+                color = purple
             self.segment_end = end
-            self.wnd.drawn_segments = [S(self.segment_start, self.segment_end)]
+            self.wnd.drawn_segments = [S(self.segment_start, self.segment_end,
+                                         color)]
+
+            self.wnd.drawn_segments.append(S(self.segment_start,
+                                             P(self.segment_end.x,
+                                               self.segment_start.y,
+                                               self.segment_start.z), red))
+            self.wnd.drawn_segments.append(S(self.segment_start,
+                                             P(self.segment_start.x,
+                                               self.segment_end.y,
+                                               self.segment_start.z), blue))
+            self.wnd.drawn_segments.append(S(self.segment_start,
+                                             P(self.segment_start.x,
+                                               self.segment_start.y,
+                                               self.segment_end.z), green))
 
 class ToolSelect(Tool):
     def __init__(self, wnd):
