@@ -23,6 +23,66 @@ class P:
         self.y = y
         self.z = z
 
+class Tool:
+    def mouseUp(self, button, pos):
+        pass
+
+    def activate(self):
+        pass
+
+class ToolLine(Tool):
+    def __init__(self, wnd):
+        self.wnd = wnd
+
+    def activate(self):
+        pygame.mouse.set_cursor((8, 8), (4, 4), (24, 24, 24, 231, 231, 24, 24, 24), (0, 0, 0, 0, 0, 0, 0, 0))
+
+    def mouseUp(self, button, pos):
+        wnd = self.wnd
+        mx, my = pos
+
+        start = None
+
+        for s in wnd.segments:
+            a = wnd._project(s.a)
+            b = wnd._project(s.b)
+            if a and b:
+                x0, y0 = wnd._to_zero(a)
+                x1, y1 = wnd._to_zero(b)
+                if abs(x0-mx) < 5 and abs(y0-my) < 5:
+                    start = s.a
+                    break
+                if abs(x1-mx) < 5 and abs(y1-my) < 5:
+                    start = s.b
+                    break
+
+        if start:
+            self.wnd.segments.append(S(start, P(2, 2, 2)))
+
+class ToolSelect(Tool):
+    def __init__(self, wnd):
+        self.wnd = wnd
+
+    def activate(self):
+        pygame.mouse.set_cursor((16, 19), (0, 0), (128, 0, 192, 0, 160, 0, 144, 0, 136, 0, 132, 0, 130, 0, 129, 0, 128, 128, 128, 64, 128, 32, 128, 16, 129, 240, 137, 0, 148, 128, 164, 128, 194, 64, 2, 64, 1, 128), (128, 0, 192, 0, 224, 0, 240, 0, 248, 0, 252, 0, 254, 0, 255, 0, 255, 128, 255, 192, 255, 224, 255, 240, 255, 240, 255, 0, 247, 128, 231, 128, 195, 192, 3, 192, 1, 128))
+
+    def mouseUp(self, button, pos):
+        mx, my = pos
+        wnd = self.wnd
+
+        for s in wnd.segments:
+            s.active = False
+
+        for s in wnd.segments:
+            a = wnd._project(s.a)
+            b = wnd._project(s.b)
+            if a and b:
+                x0, y0 = wnd._to_zero(a)
+                x1, y1 = wnd._to_zero(b)
+                if funcs.dist(x0, y0, x1, y1, mx, my) < 5:
+                    s.active = True
+                    break
+
 def put_cube(s, x, y, z, c):
     w = 10
     s.append(S(P(x, y, z), P(x+w, y, z), c))
@@ -52,6 +112,8 @@ class Starter(PygameHelper):
         self.camera_angle_vert = 0
         self.pressed = set()
 
+        self._set_tool(ToolSelect(self))
+
         self.segments = []
         put_cube(self.segments, 40, 0, 40, red)
         put_cube(self.segments, -40, 0, 40, green)
@@ -67,6 +129,10 @@ class Starter(PygameHelper):
         self.segments.append(S(P(-1, 0, 0), P(1, 0, 0)))
         self.segments.append(S(P(0, -1, 0), P(0, 1, 0)))
         self.segments.append(S(P(0, 0, -1), P(0, 0, 1)))
+
+    def _set_tool(self, tool):
+        self.tool = tool
+        self.tool.activate()
 
     def _move_camera(self, side, dy, forward):
         a = self.camera_angle
@@ -160,20 +226,7 @@ class Starter(PygameHelper):
         self.pressed.discard(key)
 
     def mouseUp(self, button, pos):
-        mx, my = pos
-
-        for s in self.segments:
-            s.active = False
-
-        for s in self.segments:
-            a = self._project(s.a)
-            b = self._project(s.b)
-            if a and b:
-                x0, y0 = self._to_zero(a)
-                x1, y1 = self._to_zero(b)
-                if funcs.dist(x0, y0, x1, y1, mx, my) < 5:
-                    s.active = True
-                    break
+        self.tool.mouseUp(button, pos)
 
     def update(self):
         shift_down = False
@@ -209,6 +262,11 @@ class Starter(PygameHelper):
             self.D += 10.0
         if 281 in self.pressed: # page-down
             self.D -= 10.0
+
+        if 108 in self.pressed: # 'L'
+            self._set_tool(ToolLine(self))
+        if 112 in self.pressed: # 'P'
+            self._set_tool(ToolSelect(self))
 
     def draw(self):
         self.screen.fill((255,255,255))
