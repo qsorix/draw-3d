@@ -24,6 +24,9 @@ class S:
         self.color = color
         self.active = False
 
+    def __repr__(self):
+        return "S({0}, {1})".format(self.a, self.b)
+
 class Wall:
     def __init__(self, vertices):
         self.vertices = vertices
@@ -282,6 +285,59 @@ class ToolSelect(Tool):
                 x1, y1 = wnd._to_zero(b)
                 if funcs.dist(x0, y0, x1, y1, mx, my) < 5:
                     s.active = True
+                    break
+
+class ToolWall(Tool):
+    def __init__(self, wnd):
+        self.wnd = wnd
+        self.picked_segments = []
+
+    def _create_wall(self):
+        points = []
+        points.append(self.picked_segments[0].a)
+        for s in self.picked_segments:
+            points.append(s.b)
+
+        self.wnd.walls.append(Wall(points))
+
+        self.activate()
+
+    def _add_segment(self, s):
+        self.picked_segments.append(s)
+        segs = self.picked_segments
+
+        if len(segs) <= 1:
+            return
+
+        if segs[-2].a == segs[-1].a:
+            segs[-2] = S(segs[-2].b, segs[-2].a)
+        if segs[-2].b == segs[-1].b:
+            segs[-1] = S(segs[-1].b, segs[-1].a)
+
+        print(segs)
+
+        if segs[-1].b == segs[0].a:
+            self._create_wall()
+
+    def activate(self):
+        pygame.mouse.set_cursor(*pygame.cursors.diamond)
+
+        self.picked_segments = []
+        for s in self.wnd.segments:
+            s.active = False
+
+    def mouseUp(self, button, pos):
+        mx, my = pos
+        wnd = self.wnd
+        for s in wnd.segments:
+            a = wnd._project(s.a)
+            b = wnd._project(s.b)
+            if a and b:
+                x0, y0 = wnd._to_zero(a)
+                x1, y1 = wnd._to_zero(b)
+                if funcs.dist(x0, y0, x1, y1, mx, my) < 5:
+                    s.active = True
+                    self._add_segment(s)
                     break
 
 def put_cube(s, walls, x, y, z, w, c):
@@ -563,6 +619,8 @@ class Starter(PygameHelper):
         if 281 in self.pressed: # page-down
             self.D -= 10.0
 
+        if 102 in self.pressed: # 'F'
+            self._set_tool(ToolWall(self))
         if 108 in self.pressed: # 'L'
             self._set_tool(ToolLine(self))
         if 112 in self.pressed: # 'P'

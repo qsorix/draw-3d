@@ -11,6 +11,12 @@ class P:
                  self.y + vector.y,
                  self.z + vector.z)
 
+    def __repr__(self):
+        return "({0}, {1}, {2})".format(self.x, self.y, self.z)
+
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y and self.z == other.z
+
 class Vector:
     def __init__(self, x, y, z):
         self.x = x
@@ -39,6 +45,8 @@ def point_to_plane_distance(plane, point):
 
 def unit(v):
     l = length(v)
+    if l == 0:
+        return Vector(0, 0, 0)
     return Vector(v.x/l, v.y/l, v.z/l)
 
 def project_point_onto_vector(point, v0, vector):
