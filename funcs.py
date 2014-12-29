@@ -6,6 +6,19 @@ class Vector:
         self.y = y
         self.z = z
 
+class Plane:
+    def __init__(self, normal, v0):
+        self.normal = normal
+        self.v0 = v0
+
+def vector_from_to(a, b):
+    return Vector(b.x-a.x, b.y-a.y, b.z-a.z)
+
+def point_to_plane_distance(plane, point):
+    sn = -dot(plane.normal, vector_from_to(plane.v0, point))
+    return sn
+
+# distance from a segment to a point
 def dist(x1,y1, x2,y2, x3,y3): # x3,y3 is the point
     px = x2-x1
     py = y2-y1
@@ -30,7 +43,6 @@ def dist(x1,y1, x2,y2, x3,y3): # x3,y3 is the point
     # returns to other results of this function, you
     # can just return the squared distance instead
     # (i.e. remove the sqrt) to gain a little performance
-
     dist = math.sqrt(dx*dx + dy*dy)
 
     return dist

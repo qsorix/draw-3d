@@ -3,7 +3,7 @@
 import pygame
 import math
 import funcs
-from funcs import Vector
+from funcs import Vector, vector_from_to
 from pygamehelper import PygameHelper
 
 black = (0, 0, 0)
@@ -35,9 +35,6 @@ class Wall:
                                           self.vertices[1]),
                            vector_from_to(self.vertices[1],
                                           self.vertices[2]))
-
-def vector_from_to(a, b):
-    return Vector(b.x-a.x, b.y-a.y, b.z-a.z)
 
 def vector_plane_intersection(l0, l, point_on_a_z_plane, N):
     # Plane:
@@ -114,17 +111,13 @@ class ToolLine(Tool):
     def _snap_to_point(self, mx, my):
         tolerance = 8
         wnd = self.wnd
-        for s in wnd.segments:
-            a = wnd._project(s.a)
-            b = wnd._project(s.b)
-            if a and b:
+        for p in wnd.points_iter():
+            a = wnd._project(p)
+            if a:
                 x0, y0 = wnd._to_zero(a)
-                x1, y1 = wnd._to_zero(b)
                 if abs(x0-mx) < tolerance and abs(y0-my) < tolerance:
-                    return s.a
+                    return p
 
-                if abs(x1-mx) < tolerance and abs(y1-my) < tolerance:
-                    return s.b
         return None
 
     def _snap_to_axis(self, mx, my):
@@ -236,6 +229,16 @@ class ToolLine(Tool):
             self.segment_end = end
             self.wnd.drawn_segments = [S(self.segment_start, self.segment_end,
                                          color)]
+
+            normal_plane = funcs.Plane(vector_from_to(self.segment_end,
+                                                      self.segment_start),
+                                       self.segment_end)
+            for p in self.wnd.points_iter():
+                d = funcs.point_to_plane_distance(normal_plane, p)
+                if abs(d) < 1:
+                    self.wnd.drawn_segments.append(
+                        S(self.segment_end, p))
+
 
 class ToolSelect(Tool):
     def __init__(self, wnd):
@@ -480,6 +483,11 @@ class Starter(PygameHelper):
             color = green
 
         pygame.draw.circle(self.screen, color, (10, 10), 15)
+
+    def points_iter(self):
+        for s in self.segments:
+            yield s.a
+            yield s.b
 
     def keyDown(self, key):
         self.pressed.add(key)
