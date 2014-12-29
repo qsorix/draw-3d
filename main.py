@@ -30,6 +30,7 @@ class S:
 class Wall:
     def __init__(self, vertices):
         self.vertices = vertices
+        self.active = False
 
     def normal(self):
         return funcs.cross(vector_from_to(self.vertices[0],
@@ -54,6 +55,27 @@ def vector_plane_intersection(l0, l, point_on_a_z_plane, N):
 
     p = P(d*l.x + l0.x, d*l.y + l0.y, d*l.z + l0.z)
     return p
+
+def is_point_in_polygon(point, poly):
+    x, y = point.x, point.y
+
+    n = len(poly)
+    inside = False
+
+    p1x,p1y = poly[0].x, poly[0].y
+    for i in range(n+1):
+        p2x,p2y = poly[i % n].x, poly[i % n].y
+        if y > min(p1y,p2y):
+            if y <= max(p1y,p2y):
+                if x <= max(p1x,p2x):
+                    if p1y != p2y:
+                        xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+                    if p1x == p2x or x <= xints:
+                        inside = not inside
+        p1x,p1y = p2x,p2y
+
+    return inside
+
 
 def pick_plane_facing_camera(alpha, beta):
     camera = Vector(*funcs.rotate(0, 0, 1, alpha, beta))
@@ -277,6 +299,16 @@ class ToolSelect(Tool):
         for s in wnd.segments:
             s.active = False
 
+        for w in wnd.walls:
+            w.active = False
+
+        for w in wnd.walls:
+            wp = self.wnd._project_wall(w)
+            if is_point_in_polygon(P(mx, my, 0), wp.vertices):
+                w.active = True
+                print("Wall hit!")
+                break
+
         for s in wnd.segments:
             a = wnd._project(s.a)
             b = wnd._project(s.b)
@@ -406,7 +438,8 @@ class Starter(PygameHelper):
         self.segments.append(S(P(0, 0, -1), P(0, 0, 1)))
 
     def _delete_active_segments(self):
-        self.segments = [s for s in s.segments if not s.active]
+        self.segments = [s for s in self.segments if not s.active]
+        self.walls = [w for w in self.walls if not w.active]
 
     def _set_tool(self, tool):
         self.tool = tool
@@ -508,7 +541,9 @@ class Starter(PygameHelper):
                 return
             px, py = self._to_zero(p)
             points.append(P(px, py, p.z))
-        return Wall(points)
+        res = Wall(points)
+        res.active = w.active
+        return res
 
     def _pick_wall_color(self, w):
         light = funcs.unit(Vector(1, 1, -1))
@@ -516,7 +551,8 @@ class Starter(PygameHelper):
         brightness = abs(funcs.dot(light, n))
 
         c = 130 + 90*brightness
-
+        if w.active:
+            return (c, 100, 200)
         return (c, c, c)
 
     def _draw_wall(self, w):

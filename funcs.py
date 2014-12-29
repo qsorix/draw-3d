@@ -134,7 +134,5 @@ def cross(a, b):
 def length(a):
     return math.sqrt(dot(a,a))
 
-
-
 def cos_angle(a, b):
     return dot(a, b) / (length(a)*length(b))
