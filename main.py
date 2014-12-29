@@ -27,12 +27,16 @@ class Tool:
     def mouseUp(self, button, pos):
         pass
 
+    def mouseMotion(self, buttons, pos, rel):
+        pass
+
     def activate(self):
         pass
 
 class ToolLine(Tool):
     def __init__(self, wnd):
         self.wnd = wnd
+        self.segment_start = None
 
     def activate(self):
         pygame.mouse.set_cursor((8, 8), (4, 4), (24, 24, 24, 231, 231, 24, 24, 24), (0, 0, 0, 0, 0, 0, 0, 0))
@@ -41,23 +45,50 @@ class ToolLine(Tool):
         wnd = self.wnd
         mx, my = pos
 
-        start = None
+        if not self.segment_start:
+            for s in wnd.segments:
+                a = wnd._project(s.a)
+                b = wnd._project(s.b)
+                if a and b:
+                    x0, y0 = wnd._to_zero(a)
+                    x1, y1 = wnd._to_zero(b)
+                    if abs(x0-mx) < 5 and abs(y0-my) < 5:
+                        self.segment_start = s.a
+                        break
+                    if abs(x1-mx) < 5 and abs(y1-my) < 5:
+                        self.segment_start = s.b
+                        break
+        else:
+            self.wnd.drawn_segments = []
+            self.wnd.segments.append(S(self.segment_start, self.segment_end))
+            self.segment_start = None
+            self.segment_end = None
 
-        for s in wnd.segments:
-            a = wnd._project(s.a)
-            b = wnd._project(s.b)
-            if a and b:
-                x0, y0 = wnd._to_zero(a)
-                x1, y1 = wnd._to_zero(b)
-                if abs(x0-mx) < 5 and abs(y0-my) < 5:
-                    start = s.a
-                    break
-                if abs(x1-mx) < 5 and abs(y1-my) < 5:
-                    start = s.b
-                    break
 
-        if start:
-            self.wnd.segments.append(S(start, P(2, 2, 2)))
+    def mouseMotion(self, buttons, pos, rel):
+        if not self.segment_start:
+            return
+
+        D = self.wnd.D
+
+        mx, my = pos
+        mx = mx - self.wnd.w/2
+        my = -my + self.wnd.h/2
+
+        z = self.segment_start.z
+
+        x = mx*z/D
+        y = my*z/D
+
+        x, y, z = funcs.unrotate(x, y, z, self.wnd.camera_angle, self.wnd.camera_angle_vert)
+
+        x += self.wnd.camera.x
+        y += self.wnd.camera.y
+        z += self.wnd.camera.z
+
+        self.segment_end = P(x, y, z)
+
+        self.wnd.drawn_segments = [S(self.segment_start, self.segment_end)]
 
 class ToolSelect(Tool):
     def __init__(self, wnd):
@@ -115,6 +146,8 @@ class Starter(PygameHelper):
         self._set_tool(ToolSelect(self))
 
         self.segments = []
+        self.drawn_segments = []
+
         put_cube(self.segments, 40, 0, 40, red)
         put_cube(self.segments, -40, 0, 40, green)
         put_cube(self.segments, 40,  0, -40, blue)
@@ -215,6 +248,9 @@ class Starter(PygameHelper):
     def mouseUp(self, button, pos):
         self.tool.mouseUp(button, pos)
 
+    def mouseMotion(self, buttons, pos, rel):
+        self.tool.mouseMotion(buttons, pos, rel)
+
     def update(self):
         shift_down = False
         if 303 in self.pressed or 304 in self.pressed:
@@ -260,6 +296,8 @@ class Starter(PygameHelper):
         self._draw_zero()
         self._draw_cam_pos()
         for s in self.segments:
+            self._draw_segment(s)
+        for s in self.drawn_segments:
             self._draw_segment(s)
 
 s = Starter()

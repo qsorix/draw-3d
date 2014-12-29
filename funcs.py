@@ -46,3 +46,23 @@ def rotate(x, y, z, alpha, beta):
     x, y, z = xr, yr, zr
 
     return x, y, z
+
+def unrotate(x, y, z, alpha, beta):
+    alpha = -alpha
+    beta = -beta
+    cos = math.cos
+    sin = math.sin
+
+    xr = x
+    yr = z * sin(beta) + y * cos(beta)
+    zr = z * cos(beta) - y * sin(beta)
+
+    x, y, z = xr, yr, zr
+
+    xr = x * cos(alpha) - z * sin(alpha)
+    yr = y
+    zr = x * sin(alpha) + z * cos(alpha)
+
+    x, y, z = xr, yr, zr
+
+    return x, y, z
