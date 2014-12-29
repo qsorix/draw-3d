@@ -15,6 +15,10 @@ purple = (255, 100, 255)
 
 class S:
     def __init__(self, start, end, color = black):
+        if not start:
+            raise Exception("Segment requires start")
+        if not end:
+            raise Exception("Segment requires end")
         self.a = start
         self.b = end
         self.color = color
@@ -212,6 +216,7 @@ class ToolLine(Tool):
         mx, my = pos
 
         color = black
+        axis_snap = False
 
         end = self._snap_to_point(mx, my)
         if end:
@@ -220,6 +225,7 @@ class ToolLine(Tool):
         if not end:
             end, c = self._snap_to_axis(mx, my)
             if end:
+                axis_snap = True
                 color = c
 
         if not end:
@@ -230,14 +236,29 @@ class ToolLine(Tool):
             self.wnd.drawn_segments = [S(self.segment_start, self.segment_end,
                                          color)]
 
-            normal_plane = funcs.Plane(vector_from_to(self.segment_end,
-                                                      self.segment_start),
-                                       self.segment_end)
-            for p in self.wnd.points_iter():
-                d = funcs.point_to_plane_distance(normal_plane, p)
-                if abs(d) < 1:
-                    self.wnd.drawn_segments.append(
-                        S(self.segment_end, p))
+            if axis_snap:
+                normal_plane = funcs.Plane(vector_from_to(self.segment_end,
+                                                          self.segment_start),
+                                           self.segment_end)
+                for p in self.wnd.points_iter():
+                    d = funcs.point_to_plane_distance(normal_plane, p)
+
+                    if abs(d) < 2:
+                        reference_point_plane = funcs.Plane(vector_from_to(self.segment_end, self.segment_start), p)
+
+                        snaps_to = vector_plane_intersection(self.segment_start,
+                                                             vector_from_to(self.segment_start,
+                                                                            self.segment_end),
+                                                             p,
+                                                             vector_from_to(self.segment_start,
+                                                                            self.segment_end))
+                        self.segment_end = snaps_to
+                        self.wnd.drawn_segments = [S(self.segment_start,
+                                                     self.segment_end, color)]
+
+                        self.wnd.drawn_segments.append(
+                            S(self.segment_end, p))
+                        break
 
 
 class ToolSelect(Tool):
