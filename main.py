@@ -47,6 +47,7 @@ class Starter(PygameHelper):
         self.D = 500 # distance eye-screen in pixels
         self.camera = P(0, 0, 0)
         self.camera_angle = 0
+        self.camera_angle_vert = 0
         self.pressed = set()
 
         self.segments = []
@@ -101,6 +102,15 @@ class Starter(PygameHelper):
 
         x = px
         z = pz
+
+        cos_th = math.cos(self.camera_angle_vert)
+        sin_th = math.sin(self.camera_angle_vert)
+
+        pz = z * cos_th - y * sin_th
+        py = z * sin_th + y * cos_th
+
+        z = pz
+        y = py
 
         if (z <= 0.0):
             return None
@@ -160,8 +170,12 @@ class Starter(PygameHelper):
 
         if 97 in self.pressed: # A
             self.camera_angle -= 0.03
-        if 115 in self.pressed: # S
+        if 100 in self.pressed: # D
             self.camera_angle += 0.03
+        if 115 in self.pressed: # S
+            self.camera_angle_vert -= 0.03
+        if 119 in self.pressed: # W
+            self.camera_angle_vert += 0.03
 
         if 275 in self.pressed: # right
             self._move_camera(1, 0, 0)
