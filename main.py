@@ -5,9 +5,10 @@ import math
 import funcs
 from pygamehelper import PygameHelper
 
+black = (0, 0, 0)
+gray  = (150, 150, 150)
 red = (255, 100, 100)
 blue= (100, 100, 255)
-black = (0, 0, 0)
 green = (100, 255, 100)
 purple = (255, 100, 255)
 
@@ -29,6 +30,10 @@ class P:
         self.x = x
         self.y = y
         self.z = z
+
+class Wall:
+    def __init__(self, vertices):
+        self.vertices = vertices
 
 def vector_from_to(a, b):
     return Vector(b.x-a.x, b.y-a.y, b.z-a.z)
@@ -77,6 +82,18 @@ def pick_plane_not_facing_camera(alpha, beta):
     n = pick_plane_facing_camera(alpha, beta)
 
     return Vector(n.y, n.z, n.x)
+
+def order_by_z(renderables):
+    def get_z_index(r):
+        max_z = 0
+        if isinstance(r, S):
+            max_z = max(max_z, r.a.z, r.b.z)
+        elif isinstance(r, Wall):
+            for v in r.vertices:
+                max_z = max(max_z, v.z)
+        return -max_z
+
+    renderables.sort(key=get_z_index)
 
 class Tool:
     def mouseUp(self, button, pos):
@@ -277,6 +294,12 @@ class Starter(PygameHelper):
         self.segments = []
         self.drawn_segments = []
 
+        self.walls = []
+        self.walls.append(Wall([P(0, 0, 0),
+                                P(0, 30, 0),
+                                P(30, 30, 0),
+                                P(30, 0, 0)]))
+
         put_cube(self.segments, 40, 0, 40, red)
         put_cube(self.segments, -40, 0, 40, green)
         put_cube(self.segments, 40,  0, -40, blue)
@@ -333,8 +356,9 @@ class Starter(PygameHelper):
         if (z <= 0.0):
             return None
 
-        return [int(self.D/float(z)*x),
-                int(self.D/float(z)*y)]
+        return P(int(self.D/float(z)*x),
+                 int(self.D/float(z)*y),
+                 z)
 
     def _project_end(self, a, b):
         p1 = P(*self._camera_transform(a))
@@ -346,10 +370,11 @@ class Starter(PygameHelper):
         p = vector_plane_intersection(p1, vector_from_to(p1, p2),
                                       P(0,0,1), Vector(0,0,1))
 
-        return [int(self.D/float(p.z)*p.x),
-                int(self.D/float(p.z)*p.y)]
+        return P(int(self.D/float(p.z)*p.x),
+                 int(self.D/float(p.z)*p.y),
+                 p.z)
 
-    def _draw_segment(self, s):
+    def _project_segment(self, s):
         a = self._project(s.a)
         b = self._project(s.b)
         if (a and not b):
@@ -358,22 +383,52 @@ class Starter(PygameHelper):
             a = self._project_end(s.b, s.a)
 
         if a and b:
-            if s.active:
-                width=3
-                pygame.draw.line(self.screen,
-                                 s.color,
-                                 self._to_zero(a),
-                                 self._to_zero(b),
-                                 width)
-            else:
-                pygame.draw.aaline(self.screen,
-                                 s.color,
-                                 self._to_zero(a),
-                                 self._to_zero(b),
-                                 1)
+            ax, ay = self._to_zero(a)
+            bx, by = self._to_zero(b)
+            return S(P(ax, ay, a.z), P(bx, by, b.z), color=s.color)
+
+    def _draw_segment(self, s):
+        if not s:
+            return
+
+        if s.active:
+            width=3
+            pygame.draw.line(self.screen,
+                             s.color,
+                             (s.a.x, s.a.y),
+                             (s.b.x, s.b.y),
+                             width)
+        else:
+            pygame.draw.aaline(self.screen,
+                             s.color,
+                             (s.a.x, s.a.y),
+                             (s.b.x, s.b.y),
+                             1)
+
+    def _project_wall(self, w):
+        points = []
+        for v in w.vertices:
+            p = self._project(v)
+            if not v:
+                return
+            px, py = self._to_zero(p)
+            points.append(P(px, py, p.z))
+        return Wall(points)
+
+    def _draw_wall(self, w):
+        if not w:
+            return
+
+        points = []
+        for v in w.vertices:
+            points.append((v.x, v.y))
+
+        pygame.draw.polygon(self.screen,
+                            gray,
+                            points)
 
     def _to_zero(self, p):
-        x, y = p;
+        x, y = p.x, p.y;
         return [int(x + self.w/2), int(-y + self.h/2)]
 
     def _draw_zero(self):
@@ -460,10 +515,32 @@ class Starter(PygameHelper):
         self._draw_zero()
         self._draw_cam_pos()
         self._draw_cam_face()
+
+        to_render = []
+
         for s in self.segments:
-            self._draw_segment(s)
+            s = self._project_segment(s)
+            if s:
+                to_render.append(s)
+
         for s in self.drawn_segments:
-            self._draw_segment(s)
+            s = self._project_segment(s)
+            if s:
+                to_render.append(s)
+
+        for w in self.walls:
+            w = self._project_wall(w)
+            if w:
+                to_render.append(w)
+
+        order_by_z(to_render)
+
+        for r in to_render:
+            if isinstance(r, S):
+                self._draw_segment(r)
+            else:
+                self._draw_wall(r)
+
 
 s = Starter()
 
