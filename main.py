@@ -1,4 +1,7 @@
+#!/usr/bin/env python
+
 import pygame
+import math
 from pygamehelper import PygameHelper
 
 red = (255, 100, 100)
@@ -18,42 +21,86 @@ class P:
         self.y = y
         self.z = z
 
+def put_cube(s, x, y, z, c):
+    w = 10
+    s.append(S(P(x, y, z), P(x+w, y, z), c))
+    s.append(S(P(x, y, z), P(x, y+w, z), c))
+    s.append(S(P(x, y+w, z), P(x+w, y+w, z), c))
+    s.append(S(P(x+w, y, z), P(x+w, y+w, z), c))
+
+    s.append(S(P(x+w, y, z), P(x+w, y, z+w), c))
+    s.append(S(P(x, y+w, z), P(x, y+w, z+w), c))
+    s.append(S(P(x, y, z), P(x, y, z+w), c))
+    s.append(S(P(x+w, y+w, z), P(x+w, y+w, z+w), c))
+
+    s.append(S(P(x, y, z+w), P(x+w, y, z+w), c))
+    s.append(S(P(x, y, z+w), P(x, y+w, z+w), c))
+    s.append(S(P(x, y+w, z+w), P(x+w, y+w, z+w), c))
+    s.append(S(P(x+w, y, z+w), P(x+w, y+w, z+w), c))
+
 class Starter(PygameHelper):
     def __init__(self):
         self.w, self.h = 800, 600
         PygameHelper.__init__(self, size=(self.w, self.h),
                               fill=((255,255,255)))
 
-        self.D = 50 # distance eye-screen in pixels
+        self.D = 500 # distance eye-screen in pixels
         self.camera = P(0, 0, 0)
         self.camera_angle = 0
         self.pressed = set()
 
         self.segments = []
-        self.segments.append(S(P(20, 20, 20), P(30, 20, 20), red))
-        self.segments.append(S(P(20, 20, 20), P(20, 30, 20), red))
-        self.segments.append(S(P(20, 30, 20), P(30, 30, 20), red))
-        self.segments.append(S(P(30, 20, 20), P(30, 30, 20), red))
+        put_cube(self.segments, 40, 0, 40, red)
+        put_cube(self.segments, -40, 0, 40, green)
+        put_cube(self.segments, 40,  0, -40, blue)
+        put_cube(self.segments, -40,  0, -40, black)
 
-        self.segments.append(S(P(30, 20, 20), P(30, 20, 30)))
-        self.segments.append(S(P(20, 30, 20), P(20, 30, 30)))
-        self.segments.append(S(P(20, 20, 20), P(20, 20, 30)))
-        self.segments.append(S(P(30, 30, 20), P(30, 30, 30)))
+        # for a in range(0,90,10):
+        #     for b in range(0,90,10):
+        #         self.segments.append(S(P(a, b, 1), P(a, b, 70000), green))
+        #         self.segments.append(S(P(a, 1, b), P(a, 70000, b), blue))
+        #         self.segments.append(S(P(1, a, b), P(70000, a, b), red))
 
-        self.segments.append(S(P(20, 20, 30), P(30, 20, 30), blue))
-        self.segments.append(S(P(20, 20, 30), P(20, 30, 30), blue))
-        self.segments.append(S(P(20, 30, 30), P(30, 30, 30), blue))
-        self.segments.append(S(P(30, 20, 30), P(30, 30, 30), blue))
+        self.segments.append(S(P(-1, 0, 0), P(1, 0, 0)))
+        self.segments.append(S(P(0, -1, 0), P(0, 1, 0)))
+        self.segments.append(S(P(0, 0, -1), P(0, 0, 1)))
 
-        self.segments.append(S(P(0, 0, 1), P(0, 0, 70000), green))
-        self.segments.append(S(P(0, 0, 1), P(0, 70000, 1), blue))
-        self.segments.append(S(P(0, 0, 1), P(70000, 0, 1), red))
+    def _move_camera(self, side, dy, forward):
+        a = self.camera_angle
+        cos = math.cos
+        sin = math.sin
+        dx = forward * sin(a) + side * sin(a+3.14/2)
+        dz = forward * cos(a) + side * cos(a+3.14/2)
+
+        self.camera.x += dx
+        self.camera.y += dy
+        self.camera.z += dz
+
+        print ("Camera: ", self.camera.x, self.camera.y, self.camera.z)
+
 
     def _project(self, p):
         D = self.D
-        x = p.x - self.camera.x
-        y = p.y - self.camera.y
-        z = p.z - self.camera.z
+        cos = math.cos(self.camera_angle)
+        sin = math.sin(self.camera_angle)
+
+        x = p.x
+        y = p.y
+        z = p.z
+        
+        xu = self.camera.x
+        yu = self.camera.y
+        zu = self.camera.z
+
+        x = x - xu
+        y = y - yu
+        z = z - zu
+
+        px = x * cos - z * sin
+        pz = x * sin + z * cos
+
+        x = px
+        z = pz
 
         if (z <= 0.0):
             return None
@@ -84,6 +131,10 @@ class Starter(PygameHelper):
                          [int(self.w/2), 0],
                          [int(self.w/2), self.h])
 
+    def _draw_cam_pos(self):
+        pygame.draw.circle(self.screen, red, (int(self.camera.x),
+                                              int(self.camera.z)), 2)
+
     def keyDown(self, key):
         self.pressed.add(key)
         print(key)
@@ -98,19 +149,24 @@ class Starter(PygameHelper):
 
         if shift_down:
             if 273 in self.pressed: # up
-                self.camera.z += 1.0
+                self._move_camera(0, 1, 0)
             if 274 in self.pressed: # down
-                self.camera.z -= 1.0
+                self._move_camera(0, -1, 0)
         else:
             if 273 in self.pressed: # up
-                self.camera.y += 1.0
+                self._move_camera(0, 0, 1)
             if 274 in self.pressed: # down
-                self.camera.y -= 1.0
+                self._move_camera(0, 0, -1)
+
+        if 97 in self.pressed: # A
+            self.camera_angle -= 0.03
+        if 115 in self.pressed: # S
+            self.camera_angle += 0.03
 
         if 275 in self.pressed: # right
-            self.camera.x += 1.0
+            self._move_camera(1, 0, 0)
         if 276 in self.pressed: # left
-            self.camera.x -= 1.0
+            self._move_camera(-1, 0, 0)
 
         if 280 in self.pressed: # page-up
             self.D += 10.0
@@ -138,6 +194,7 @@ class Starter(PygameHelper):
     def draw(self):
         self.screen.fill((255,255,255))
         self._draw_zero()
+        self._draw_cam_pos()
         for s in self.segments:
             self._draw_segment(s)
 
