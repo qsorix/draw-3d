@@ -2,6 +2,7 @@
 
 import pygame
 import math
+import funcs
 from pygamehelper import PygameHelper
 
 red = (255, 100, 100)
@@ -14,6 +15,7 @@ class S:
         self.a = start
         self.b = end
         self.color = color
+        self.active = False
 
 class P:
     def __init__(self, x, y, z):
@@ -122,10 +124,15 @@ class Starter(PygameHelper):
         a = self._project(s.a)
         b = self._project(s.b)
         if a and b:
+            if s.active:
+                width=3
+            else:
+                width=1
             pygame.draw.line(self.screen,
                              s.color,
                              self._to_zero(a),
-                             self._to_zero(b))
+                             self._to_zero(b),
+                             width)
 
     def _to_zero(self, p):
         x, y = p;
@@ -151,6 +158,22 @@ class Starter(PygameHelper):
 
     def keyUp(self, key):
         self.pressed.discard(key)
+
+    def mouseUp(self, button, pos):
+        mx, my = pos
+
+        for s in self.segments:
+            s.active = False
+
+        for s in self.segments:
+            a = self._project(s.a)
+            b = self._project(s.b)
+            if a and b:
+                x0, y0 = self._to_zero(a)
+                x1, y1 = self._to_zero(b)
+                if funcs.dist(x0, y0, x1, y1, mx, my) < 5:
+                    s.active = True
+                    break
 
     def update(self):
         shift_down = False
@@ -184,26 +207,8 @@ class Starter(PygameHelper):
 
         if 280 in self.pressed: # page-up
             self.D += 10.0
-            print(self.D)
         if 281 in self.pressed: # page-down
             self.D -= 10.0
-            print(self.D)
-
-    def mouseUp(self, button, pos):
-        if not self.new_start:
-            self.new_start = pos
-        else:
-            self.new_end = pos
-
-            self.segments.append(
-                Segment(self.new_start[0], self.new_start[1],
-                        self.new_end[0], self.new_end[1]))
-            self.intersections = \
-                    find_intersections(self.segments)
-
-            self.new_start = None
-            self.new_end = None
-
 
     def draw(self):
         self.screen.fill((255,255,255))
