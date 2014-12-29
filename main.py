@@ -127,25 +127,25 @@ class ToolLine(Tool):
         points = []
         if end1:
             points.extend([
-                    P(end1.x, self.segment_start.y, self.segment_start.z),
-                    P(self.segment_start.x, end1.y, self.segment_start.z),
-                    P(self.segment_start.x, self.segment_start.y, end1.z),
+                    (P(end1.x, self.segment_start.y, self.segment_start.z),red),
+                    (P(self.segment_start.x, end1.y, self.segment_start.z),blue),
+                    (P(self.segment_start.x, self.segment_start.y, end1.z),green),
                 ])
 
         if end2:
             points.extend([
-                P(end2.x, self.segment_start.y, self.segment_start.z),
-                P(self.segment_start.x, end2.y, self.segment_start.z),
-                P(self.segment_start.x, self.segment_start.y, end2.z)])
+                (P(end2.x, self.segment_start.y, self.segment_start.z),red),
+                (P(self.segment_start.x, end2.y, self.segment_start.z),blue),
+                (P(self.segment_start.x, self.segment_start.y, end2.z),green)])
 
-        for p in points:
+        for p, color in points:
             pp = self.wnd._project(p)
             if pp:
                 x,y = self.wnd._to_zero(pp)
                 if abs(x-mx) < tolerance and abs(y-my) < tolerance:
-                    return p
+                    return p, color
 
-        return None
+        return None, None
 
     def _mouse_points_at(self, mx, my):
         D = self.wnd.D
@@ -200,23 +200,21 @@ class ToolLine(Tool):
 
         mx, my = pos
 
-        snapped = False
+        color = black
+
         end = self._snap_to_point(mx, my)
         if end:
-            snapped = True
+            color = purple
 
         if not end:
-            end = self._snap_to_axis(mx, my)
-        if end:
-            snapped = True
+            end, c = self._snap_to_axis(mx, my)
+            if end:
+                color = c
 
-        if not snapped:
+        if not end:
             end = self._free_point(mx, my)
 
         if end:
-            color = black
-            if snapped:
-                color = purple
             self.segment_end = end
             self.wnd.drawn_segments = [S(self.segment_start, self.segment_end,
                                          color)]
@@ -343,13 +341,17 @@ class Starter(PygameHelper):
         if a and b:
             if s.active:
                 width=3
+                pygame.draw.line(self.screen,
+                                 s.color,
+                                 self._to_zero(a),
+                                 self._to_zero(b),
+                                 width)
             else:
-                width=1
-            pygame.draw.line(self.screen,
-                             s.color,
-                             self._to_zero(a),
-                             self._to_zero(b),
-                             width)
+                pygame.draw.aaline(self.screen,
+                                 s.color,
+                                 self._to_zero(a),
+                                 self._to_zero(b),
+                                 1)
 
     def _to_zero(self, p):
         x, y = p;
