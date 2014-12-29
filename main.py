@@ -144,7 +144,20 @@ class ToolLine(Tool):
         for p in self.wnd.points_iter():
             if self._can_snap_to(mx, my, p):
                 return p
+        return None
 
+    def _snap_to_segment(self, mx, my):
+        wnd = self.wnd
+        for s in wnd.segments:
+            a = wnd._project(s.a)
+            b = wnd._project(s.b)
+            if a and b:
+                x0, y0 = wnd._to_zero(a)
+                x1, y1 = wnd._to_zero(b)
+                if funcs.dist(x0, y0, x1, y1, mx, my) < 5:
+                    return P(0.5*(s.a.x+s.b.x),
+                             0.5*(s.a.y+s.b.y),
+                             0.5*(s.a.z+s.b.z))
         return None
 
     def _snap_to_axis(self, mx, my):
@@ -225,6 +238,11 @@ class ToolLine(Tool):
             p = self._snap_to_point(mx, my)
             if p:
                 self.segment_start = p
+            else:
+                p = self._snap_to_segment(mx, my)
+                if p:
+                    self.segment_start = p
+
         else:
             self.wnd.drawn_segments = []
             self.wnd.add_segment(S(self.segment_start, self.segment_end))
@@ -691,8 +709,6 @@ class Starter(PygameHelper):
         pygame.draw.circle(self.screen, color, (10, 10), 15)
 
     def add_segment(self, s):
-        self.segments.append(s)
-
         def split_wall(w, start, end):
             if start > end:
                 start, end = end, start
@@ -711,6 +727,30 @@ class Starter(PygameHelper):
 
             self.walls.append(Wall(new_wall_vertices))
             w.vertices = old_wall_vertices
+
+        new_segments = [s]
+        def split_segment(s, p):
+            for w in self.walls:
+                V = len(w.vertices)
+                for i in range(V):
+                    if ((w.vertices[i] == s.a and w.vertices[(i+1)%V] == s.b) or
+                        (w.vertices[i] == s.b and w.vertices[(i+1)%V] == s.a)):
+                        w.vertices.insert(i+1, p)
+                        print(w)
+                        break
+
+            new_segments.append(S(p, s.b))
+            s.b = p
+
+        for ss in self.segments:
+            if ss.a != s.a and ss.b != s.a and funcs.point_lies_on_segment(ss, s.a):
+                split_segment(ss, s.a)
+
+            if ss.a != s.b and ss.b != s.b and funcs.point_lies_on_segment(ss, s.b):
+                split_segment(ss, s.b)
+
+        print("Segs: ", new_segments)
+        self.segments.extend(new_segments)
 
         for w in self.walls:
             start = -1

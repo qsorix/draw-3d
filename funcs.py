@@ -15,7 +15,9 @@ class P:
         return "({0}, {1}, {2})".format(self.x, self.y, self.z)
 
     def __eq__(self, other):
-        return self.x == other.x and self.y == other.y and self.z == other.z
+        return (abs(self.x - other.x) < 0.0001 and
+                abs(self.y - other.y) < 0.0001 and
+                abs(self.z - other.z) < 0.0001)
 
 class Vector:
     def __init__(self, x, y, z):
@@ -43,6 +45,13 @@ def point_to_plane_distance(plane, point):
     sn = -dot(plane.normal, vector_from_to(plane.v0, point))
     return sn
 
+def point_lies_on_segment(seg, p):
+    v1 = vector_from_to(seg.a, p)
+    v2 = vector_from_to(p, seg.b)
+    parallel = length(cross(v1, v2)) < 0.0001
+    close = abs(length(v1)+length(v2) - length(vector_from_to(seg.a, seg.b))) < 0.0001
+    return parallel and close
+
 def unit(v):
     l = length(v)
     if l == 0:
@@ -62,6 +71,8 @@ def dist(x1,y1, x2,y2, x3,y3): # x3,y3 is the point
     py = y2-y1
 
     something = px*px + py*py
+    if (something == 0):
+        return math.sqrt((x1-x3)*(x1-x3)+(y1-y3)*(y1-y3))
 
     u =  ((x3 - x1) * px + (y3 - y1) * py) / float(something)
 
