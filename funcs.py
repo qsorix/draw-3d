@@ -66,3 +66,6 @@ def unrotate(x, y, z, alpha, beta):
     x, y, z = xr, yr, zr
 
     return x, y, z
+
+def dot(a, b):
+    return a.x*b.x + a.y*b.y + a.z*b.z

@@ -10,6 +10,12 @@ blue= (100, 100, 255)
 black = (0, 0, 0)
 green = (100, 255, 100)
 
+class Vector:
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
 class S:
     def __init__(self, start, end, color = black):
         self.a = start
@@ -22,6 +28,29 @@ class P:
         self.x = x
         self.y = y
         self.z = z
+
+def vector_from_to(a, b):
+    return Vector(b.x-a.x, b.y-a.y, b.z-a.z)
+
+def vector_z_plane_intersection(l0, l, point_on_a_z_plane):
+    # Plane:
+    # (P - point_on_a_z_plane) dot Z = 0
+
+    # Line:
+    # P = l0 + d*l
+
+    Z = Vector(0, 0, 1)
+
+    dd = funcs.dot(l, Z)
+    if abs(dd) < 0.0001:
+        return None
+
+    d = funcs.dot(P(point_on_a_z_plane.x - l0.x,
+                    point_on_a_z_plane.y - l0.y,
+                    point_on_a_z_plane.z - l0.z), Z) / dd
+
+    p = P(d*l.x + l0.x, d*l.y + l0.y, d*l.z + l0.z)
+    return p
 
 class Tool:
     def mouseUp(self, button, pos):
@@ -86,9 +115,14 @@ class ToolLine(Tool):
         y += self.wnd.camera.y
         z += self.wnd.camera.z
 
-        self.segment_end = P(x, y, z)
+        mouse_points_at = P(x, y, z)
+        view_direction = vector_from_to(self.wnd.camera, mouse_points_at)
 
-        self.wnd.drawn_segments = [S(self.segment_start, self.segment_end)]
+        end = vector_z_plane_intersection(self.wnd.camera, view_direction, self.segment_start)
+
+        if end:
+            self.segment_end = end
+            self.wnd.drawn_segments = [S(self.segment_start, self.segment_end)]
 
 class ToolSelect(Tool):
     def __init__(self, wnd):
