@@ -69,3 +69,9 @@ def unrotate(x, y, z, alpha, beta):
 
 def dot(a, b):
     return a.x*b.x + a.y*b.y + a.z*b.z
+
+def length(a):
+    return math.sqrt(dot(a,a))
+
+def cos_angle(a, b):
+    return dot(a, b) / (length(a)*length(b))

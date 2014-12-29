@@ -32,25 +32,48 @@ class P:
 def vector_from_to(a, b):
     return Vector(b.x-a.x, b.y-a.y, b.z-a.z)
 
-def vector_z_plane_intersection(l0, l, point_on_a_z_plane):
+def vector_plane_intersection(l0, l, point_on_a_z_plane, N):
     # Plane:
-    # (P - point_on_a_z_plane) dot Z = 0
+    # (P - point_on_a_z_plane) dot N = 0
 
     # Line:
     # P = l0 + d*l
 
-    Z = Vector(0, 0, 1)
-
-    dd = funcs.dot(l, Z)
+    dd = funcs.dot(l, N)
     if abs(dd) < 0.0001:
         return None
 
     d = funcs.dot(P(point_on_a_z_plane.x - l0.x,
                     point_on_a_z_plane.y - l0.y,
-                    point_on_a_z_plane.z - l0.z), Z) / dd
+                    point_on_a_z_plane.z - l0.z), N) / dd
 
     p = P(d*l.x + l0.x, d*l.y + l0.y, d*l.z + l0.z)
     return p
+
+def pick_plane_facing_camera(alpha, beta):
+    camera = Vector(*funcs.rotate(0, 0, 1, alpha, beta))
+    nx = Vector(1, 0, 0)
+    ny = Vector(0, 1, 0)
+    nz = Vector(0, 0, 1)
+
+    if abs(math.cos(beta)) < 0.52:
+        return ny
+
+    angle_x = abs(funcs.cos_angle(camera, nx))
+    angle_y = abs(funcs.cos_angle(camera, ny))
+    angle_z = abs(funcs.cos_angle(camera, nz))
+
+    print("Camera dir:", camera.x, camera.y, camera.z)
+    print("Angles:    ", angle_x, angle_y, angle_z)
+
+    # cos is max for min angle
+    angle_min = max(angle_x, angle_y, angle_z)
+    if angle_min == angle_x:
+        return nx
+    if angle_min == angle_y:
+        return ny
+    if angle_min == angle_z:
+        return nz
 
 class Tool:
     def mouseUp(self, button, pos):
@@ -118,7 +141,10 @@ class ToolLine(Tool):
         mouse_points_at = P(x, y, z)
         view_direction = vector_from_to(self.wnd.camera, mouse_points_at)
 
-        end = vector_z_plane_intersection(self.wnd.camera, view_direction, self.segment_start)
+        N = pick_plane_facing_camera(self.wnd.camera_angle,
+                                     self.wnd.camera_angle_vert)
+
+        end = vector_plane_intersection(self.wnd.camera, view_direction, self.segment_start, N)
 
         if end:
             self.segment_end = end
@@ -187,11 +213,11 @@ class Starter(PygameHelper):
         put_cube(self.segments, 40,  0, -40, blue)
         put_cube(self.segments, -40,  0, -40, black)
 
-        # for a in range(0,90,10):
-        #     for b in range(0,90,10):
-        #         self.segments.append(S(P(a, b, 1), P(a, b, 70000), green))
-        #         self.segments.append(S(P(a, 1, b), P(a, 70000, b), blue))
-        #         self.segments.append(S(P(1, a, b), P(70000, a, b), red))
+        for a in range(0,10,10):
+            for b in range(0,10,10):
+                self.segments.append(S(P(a, b, 1), P(a, b, 70000), green))
+                self.segments.append(S(P(a, 1, b), P(a, 70000, b), blue))
+                self.segments.append(S(P(1, a, b), P(70000, a, b), red))
 
         self.segments.append(S(P(-1, 0, 0), P(1, 0, 0)))
         self.segments.append(S(P(0, -1, 0), P(0, 1, 0)))
@@ -272,6 +298,19 @@ class Starter(PygameHelper):
         pygame.draw.circle(self.screen, red, (int(self.camera.x),
                                               int(self.camera.z)), 2)
 
+    def _draw_cam_face(self):
+        N = pick_plane_facing_camera(self.camera_angle,
+                                     self.camera_angle_vert)
+        print ("N: ", N.x, N.y, N.z)
+        if N.x:
+            color = red
+        if N.y:
+            color = blue
+        if N.z:
+            color = green
+
+        pygame.draw.circle(self.screen, color, (10, 10), 15)
+
     def keyDown(self, key):
         self.pressed.add(key)
         print(key)
@@ -329,6 +368,7 @@ class Starter(PygameHelper):
         self.screen.fill((255,255,255))
         self._draw_zero()
         self._draw_cam_pos()
+        self._draw_cam_face()
         for s in self.segments:
             self._draw_segment(s)
         for s in self.drawn_segments:
