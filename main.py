@@ -284,6 +284,97 @@ class ToolLine(Tool):
                             self.wnd.drawn_segments.append(
                                 S(self.segment_end, p, gray))
 
+class ToolPull(Tool):
+    def __init__(self, wnd):
+        self.wnd = wnd
+        self.wall = False
+        self.length = 0
+
+    def activate(self):
+        pygame.mouse.set_cursor(*pygame.cursors.tri_right)
+        for w in self.wnd.walls:
+            if w.active:
+                self.wall = w
+                break
+
+    def _mouse_points_at(self, mx, my):
+        D = self.wnd.D
+
+        mx = mx - self.wnd.w/2
+        my = -my + self.wnd.h/2
+
+        z = 100 # self.wall.vertices[0].z # 1 # self.segment_start.z
+
+        x = mx*z/D
+        y = my*z/D
+
+        x, y, z = funcs.unrotate(x, y, z, self.wnd.camera_angle, self.wnd.camera_angle_vert)
+
+        x += self.wnd.camera.x
+        y += self.wnd.camera.y
+        z += self.wnd.camera.z
+
+        return P(x, y, z)
+
+    def _shifted_walls(self, offset):
+        new_walls = []
+
+        a = funcs.unit(self.wall.normal())*offset
+
+        points = []
+        for v in self.wall.vertices:
+            points.append(v + a)
+        new_walls.append(Wall(points))
+
+        s = len(self.wall.vertices)
+        for i in range(s):
+            new_walls.append(Wall([self.wall.vertices[i],
+                                   self.wall.vertices[(i+1) % s],
+                                   self.wall.vertices[(i+1) % s]+a,
+                                   self.wall.vertices[i]+a]))
+        return new_walls
+
+    def _shifted_segments(self, offset):
+        new_segments = []
+        a = funcs.unit(self.wall.normal())*offset
+
+        s = len(self.wall.vertices)
+        for i in range(s):
+            new_segments.append(S(self.wall.vertices[i],
+                                  self.wall.vertices[i]+a))
+            new_segments.append(S(self.wall.vertices[i]+a,
+                                  self.wall.vertices[(i+1)%s]+a))
+        return new_segments
+
+    def mouseUp(self, button, pos):
+        if not self.wall:
+            return
+        if not self.length:
+            return
+
+        self.wnd.walls.extend(self._shifted_walls(self.length))
+        self.wnd.segments.extend(self._shifted_segments(self.length))
+        self.wnd.drawn_walls = []
+        self.wnd.drawn_segments = []
+        self.wall = None
+
+    def mouseMotion(self, buttons, pos, rel):
+        if not self.wall:
+            return
+
+        direction = funcs.unit(self.wall.normal())
+
+        mouse_at = self._mouse_points_at(*pos)
+        target_plane = funcs.Plane(direction, mouse_at)
+        self.length = funcs.point_to_plane_distance(target_plane,
+                                                    self.wall.vertices[0])
+
+        self.wnd.drawn_walls = self._shifted_walls(self.length)
+
+        self.wnd.drawn_segments = self._shifted_segments(self.length)
+
+        self.wnd.drawn_segments.append(
+            S(self.wall.vertices[0], self._mouse_points_at(*pos), purple))
 
 class ToolSelect(Tool):
     def __init__(self, wnd):
@@ -419,8 +510,8 @@ class Starter(PygameHelper):
 
         self.segments = []
         self.drawn_segments = []
-
         self.walls = []
+        self.drawn_walls = []
 
         put_cube(self.segments, self.walls, 40, 0, 40, 20, red)
         put_cube(self.segments, self.walls, -40, 0, 40, 20, green)
@@ -660,6 +751,8 @@ class Starter(PygameHelper):
         if 108 in self.pressed: # 'L'
             self._set_tool(ToolLine(self))
         if 112 in self.pressed: # 'P'
+            self._set_tool(ToolPull(self))
+        if 32 in self.pressed: # space
             self._set_tool(ToolSelect(self))
 
     def draw(self):
@@ -681,6 +774,11 @@ class Starter(PygameHelper):
                 to_render.append(s)
 
         for w in self.walls:
+            w = self._project_wall(w)
+            if w:
+                to_render.append(w)
+
+        for w in self.drawn_walls:
             w = self._project_wall(w)
             if w:
                 to_render.append(w)
