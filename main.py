@@ -227,7 +227,7 @@ class ToolLine(Tool):
                 self.segment_start = p
         else:
             self.wnd.drawn_segments = []
-            self.wnd.segments.append(S(self.segment_start, self.segment_end))
+            self.wnd.add_segment(S(self.segment_start, self.segment_end))
             self.segment_start = None
             self.segment_end = None
 
@@ -689,6 +689,41 @@ class Starter(PygameHelper):
             color = green
 
         pygame.draw.circle(self.screen, color, (10, 10), 15)
+
+    def add_segment(self, s):
+        self.segments.append(s)
+
+        def split_wall(w, start, end):
+            if start > end:
+                start, end = end, start
+
+            if end-start < 2:
+                return
+
+            print(w.vertices, start, end)
+
+            old_wall_vertices = w.vertices[start:end+1]
+            if end+1 > len(w.vertices):
+                old_wall_vertices.append(w.vertices[0])
+            print(old_wall_vertices)
+            new_wall_vertices = w.vertices[end:]+w.vertices[:start+1]
+            print(new_wall_vertices)
+
+            self.walls.append(Wall(new_wall_vertices))
+            w.vertices = old_wall_vertices
+
+        for w in self.walls:
+            start = -1
+            end = -1
+            for i in range(len(w.vertices)):
+                if s.a == w.vertices[i]:
+                    start = i
+                if s.b == w.vertices[i]:
+                    end = i
+
+            if start != -1 and end != -1:
+                split_wall(w, start, end)
+                break
 
     def points_iter(self):
         for s in self.segments:
