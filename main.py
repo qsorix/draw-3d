@@ -141,23 +141,16 @@ class ToolLine(Tool):
                 return p
 
     def _snap_to_point(self, mx, my):
-        for p in self.wnd.points_iter():
-            if self._can_snap_to(mx, my, p):
-                return p
+        points = self.wnd.get_objects_pointed_at(mx, my, "p")
+        if points:
+            return points[0][1]
         return None
 
     def _snap_to_segment(self, mx, my):
-        wnd = self.wnd
-        for s in wnd.segments:
-            a = wnd._project(s.a)
-            b = wnd._project(s.b)
-            if a and b:
-                x0, y0 = wnd._to_zero(a)
-                x1, y1 = wnd._to_zero(b)
-                if funcs.dist(x0, y0, x1, y1, mx, my) < 5:
-                    return P(0.5*(s.a.x+s.b.x),
-                             0.5*(s.a.y+s.b.y),
-                             0.5*(s.a.z+s.b.z))
+        segs = self.wnd.get_objects_pointed_at(mx, my, "s")
+
+        if segs:
+            return segs[0][1]
         return None
 
     def _snap_to_axis(self, mx, my):
@@ -235,13 +228,9 @@ class ToolLine(Tool):
         mx, my = pos
 
         if not self.segment_start:
-            p = self._snap_to_point(mx, my)
-            if p:
-                self.segment_start = p
-            else:
-                p = self._snap_to_segment(mx, my)
-                if p:
-                    self.segment_start = p
+            points = self.wnd.get_objects_pointed_at(mx, my, "psw")
+            if points:
+                self.segment_start = points[0][1]
 
         else:
             self.wnd.drawn_segments = []
@@ -865,6 +854,43 @@ class Starter(PygameHelper):
                 self._draw_segment(r)
             else:
                 self._draw_wall(r)
+
+    def get_objects_pointed_at(self, mx, my, type="psw"):
+        # returns a list of tuples: object, snap-point
+        tolerance = 8
+        result = []
+
+        if 'p' in type:
+            for p in self.points_iter():
+                pp = self._project(p)
+                if pp:
+                    x0, y0 = self._to_zero(pp)
+                    if abs(x0-mx) < tolerance and abs(y0-my) < tolerance:
+                        result.append((p,p))
+
+        if 's' in type:
+            for s in self.segments:
+                a = self._project(s.a)
+                b = self._project(s.b)
+                if a and b:
+                    x0, y0 = self._to_zero(a)
+                    x1, y1 = self._to_zero(b)
+                    if funcs.dist(x0, y0, x1, y1, mx, my) < tolerance:
+                        d = 0
+                        if x0-x1:
+                            d = (x0-mx) / (x0-x1)
+                        elif y0-y1:
+                            d = (y0-my) / (y0-y1)
+                        result.append((s,s.a+funcs.vector_from_to(s.a,s.b)*d))
+
+        if 'w' in type:
+            for w in self.walls:
+                wp = self._project_wall(w)
+                if wp and is_point_in_polygon(P(mx, my, 0), wp.vertices):
+                    result.append((w, w.vertices[0])) # FIXME: intersection point
+
+        return result
+
 
 
 s = Starter()
