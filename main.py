@@ -146,19 +146,6 @@ class ToolLine(Tool):
             if abs(x0-mx) < tolerance and abs(y0-my) < tolerance:
                 return p
 
-    def _snap_to_point(self, mx, my):
-        points = self.wnd.get_objects_pointed_at(mx, my, "p")
-        if points:
-            return points[0][1]
-        return None
-
-    def _snap_to_segment(self, mx, my):
-        segs = self.wnd.get_objects_pointed_at(mx, my, "s")
-
-        if segs:
-            return segs[0][1]
-        return None
-
     def _snap_to_axis(self, mx, my):
         tolerance = 10
         mouse_points_at = self._mouse_points_at(mx, my)
@@ -258,8 +245,11 @@ class ToolLine(Tool):
         color = black
         axis_snap = False
 
-        end = self._snap_to_point(mx, my)
-        if end:
+        end = None
+        points = self.wnd.get_objects_pointed_at(mx, my, "psw")
+        if points:
+            self.wnd.drawn_indicators = [points[0][1]]
+            end = points[0][1]
             color = purple
 
         if not end:
