@@ -11,6 +11,11 @@ class P:
                  self.y + vector.y,
                  self.z + vector.z)
 
+    def __sub__(self, vector):
+        return P(self.x - vector.x,
+                 self.y - vector.y,
+                 self.z - vector.z)
+
     def __repr__(self):
         return "({0}, {1}, {2})".format(self.x, self.y, self.z)
 
@@ -224,7 +229,7 @@ def orthogonal_plane(plane):
     normal = Vector(plane.normal.y, plane.normal.z, plane.normal.x)
     return Plane(normal, plane.p0)
 
-def get_axes_oriented_projections(plane, v):
+def get_axes_oriented_projection(plane, v):
     x = vector_plane_projection(Vector(1, 0, 0), plane)
     y = vector_plane_projection(Vector(0, 1, 0), plane)
     z = vector_plane_projection(Vector(0, 0, 1), plane)
@@ -233,12 +238,24 @@ def get_axes_oriented_projections(plane, v):
     ly = length(y)
     lz = length(z)
 
-    if lx <= ly and lx <= lz:
-        v0, v1 = y, z
-    elif ly <= lx and ly <= lz:
-        v0, v1 = x, z
-    else:
-        v0, v1 = x, y
+    vx = Vector(0,0,0)
+    vz = Vector(0,0,0)
+    vy = Vector(0,0,0)
 
-    return (vector_vector_projection(v, v0),
-            vector_vector_projection(v, v1))
+    if lx:
+        vx = vector_vector_projection(v, x)
+    if ly:
+        vy = vector_vector_projection(v, y)
+    if lz:
+        vz = vector_vector_projection(v, z)
+
+    lx = length(vx)
+    ly = length(vy)
+    lz = length(vz)
+
+    if lx >= ly and lx >= lz:
+        return vx
+    elif ly >= lx and ly >= lz:
+        return vy
+    else:
+        return vz

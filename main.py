@@ -53,7 +53,7 @@ def pick_plane_facing_camera(alpha, beta):
     nz = Vector(0, 0, 1)
 
     if abs(math.cos(beta)) < 0.52:
-        return ny
+        return funcs.Plane(ny, P(0,0,0))
 
     angle_x = abs(funcs.cos_angle(camera, nx))
     angle_y = abs(funcs.cos_angle(camera, ny))
@@ -62,14 +62,14 @@ def pick_plane_facing_camera(alpha, beta):
     # cos is max for min angle
     angle_min = max(angle_x, angle_y, angle_z)
     if angle_min == angle_x:
-        return nx
+        return funcs.Plane(nx, P(0,0,0))
     if angle_min == angle_y:
-        return ny
+        return funcs.Plane(ny, P(0,0,0))
     if angle_min == angle_z:
-        return nz
+        return funcs.Plane(nz, P(0,0,0))
 
 def pick_plane_not_facing_camera(alpha, beta):
-    n = pick_plane_facing_camera(alpha, beta)
+    n = pick_plane_facing_camera(alpha, beta).normal
 
     return Vector(n.y, n.z, n.x)
 
@@ -95,6 +95,8 @@ def order_by_camera_distance_and_type(camera, objects):
 
     def camera_distance(t):
         obj, p = t
+        if not p:
+            raise Exception("Weird tuple passed for sorting... {0}".format(t))
         return type_score(obj) + funcs.length(vector_from_to(camera, p))
 
     objects.sort(key=camera_distance)
@@ -123,14 +125,19 @@ class ToolRectangle(Tool):
         self.start = None
         self.end = None
         self.drawing_plane = None
-        self.v1 = None
-        self.v2 = None
+        self.side_vector = None
 
     def _put_rectangle(self):
-        self.wnd.add_segment(S(self.start, self.start+self.v1))
-        self.wnd.add_segment(S(self.start, self.start+self.v2))
-        self.wnd.add_segment(S(self.start+self.v1, self.end))
-        self.wnd.add_segment(S(self.start+self.v2, self.end))
+        for s in self._make_rectangle(self.start, self.end, self.side_vector):
+            self.wnd.add_segment(s)
+
+    def _make_rectangle(self, start, end, v):
+        res = []
+        res.append(S(start, start+v))
+        res.append(S(start+v, end))
+        res.append(S(end, end-v))
+        res.append(S(end-v, start))
+        return res
 
     def activate(self):
         pygame.mouse.set_cursor((8, 8), (4, 4), (24, 24, 24, 231, 231, 24, 24, 24), (0, 0, 0, 0, 0, 0, 0, 0))
@@ -150,31 +157,33 @@ class ToolRectangle(Tool):
 
         self.end = end
 
-        v1, v2 = funcs.get_axes_oriented_projections(self.drawing_plane, vector_from_to(self.start, end))
-        self.v1 = v1
-        self.v2 = v2
+        if not self.drawing_plane:
+            self.drawing_plane = pick_plane_facing_camera(self.wnd.camera_angle,
+                                                          self.wnd.camera_angle_vert)
+
+        v = funcs.get_axes_oriented_projection(self.drawing_plane, vector_from_to(self.start, end))
+        self.side_vector = v
 
         self.wnd.drawn_segments = [S(self.start, end, gray)]
-        self.wnd.drawn_segments.append(S(self.start, self.start+v1))
-        self.wnd.drawn_segments.append(S(self.start, self.start+v2))
-        self.wnd.drawn_segments.append(S(self.start+v1, end))
-        self.wnd.drawn_segments.append(S(self.start+v2, end))
+        self.wnd.drawn_segments.extend(self._make_rectangle(self.start,
+                                                            self.end,
+                                                            self.side_vector))
         self.wnd.drawn_indicators = [self.start, end]
 
     def mouseUp(self, button, pos):
         if not self.start:
-            objects = self.wnd.get_objects_pointed_at(*pos, type="w")
+            objects = self.wnd.get_objects_pointed_at(*pos, type="wps")
             if objects:
-                self.drawing_plane = objects[0][0].plane()
                 self.start = objects[0][1]
+                if isinstance(objects[0][0], Wall):
+                    self.drawing_plane = objects[0][0].plane()
             return
 
         if self.start and self.end:
             self._put_rectangle()
             self.start = None
             self.end = None
-            self.v1 = None
-            self.v2 = None
+            self.side_vector = None
             self.wnd.drawn_segments = []
             self.wnd.drawn_indicators = []
 
@@ -197,9 +206,9 @@ class ToolLine(Tool):
         view_direction = self.wnd.get_view_ray(mx, my)
 
         N1 = pick_plane_facing_camera(self.wnd.camera_angle,
-                                      self.wnd.camera_angle_vert)
+                                      self.wnd.camera_angle_vert).normal
         N2 = pick_plane_not_facing_camera(self.wnd.camera_angle,
-                                          self.wnd.camera_angle_vert)
+                                          self.wnd.camera_angle_vert).normal
 
         end1 = funcs.vector_plane_intersection(view_direction.p0, view_direction.v,
                                          self.segment_start, N1)
@@ -233,7 +242,7 @@ class ToolLine(Tool):
         view_direction = self.wnd.get_view_ray(mx, my)
 
         N = pick_plane_facing_camera(self.wnd.camera_angle,
-                                     self.wnd.camera_angle_vert)
+                                     self.wnd.camera_angle_vert).normal
 
         end = funcs.vector_plane_intersection(view_direction.p0, view_direction.v, self.segment_start, N)
         return end
@@ -690,7 +699,7 @@ class Starter(PygameHelper):
 
     def _draw_cam_face(self):
         N = pick_plane_facing_camera(self.camera_angle,
-                                     self.camera_angle_vert)
+                                     self.camera_angle_vert).normal
         if N.x:
             color = red
         if N.y:
@@ -932,7 +941,10 @@ class Starter(PygameHelper):
                 wp = self._project_wall(w)
                 if wp and funcs.is_point_in_polygon(P(mx, my, 0), wp.vertices):
                     p = funcs.ray_plane_intersection(view_ray, w.plane())
-                    result.append((w, p))
+                    if p: # sometimes there's no p for some strange reasons. i
+                          # think the wall may be broken and i get wrong plane
+                          # from it
+                        result.append((w, p))
 
         order_by_camera_distance_and_type(self.camera, result)
 
