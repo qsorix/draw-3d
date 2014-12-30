@@ -71,7 +71,7 @@ def pick_plane_facing_camera(alpha, beta):
 def pick_plane_not_facing_camera(alpha, beta):
     n = pick_plane_facing_camera(alpha, beta).normal
 
-    return Vector(n.y, n.z, n.x)
+    return funcs.Plane(Vector(n.y, n.z, n.x), P(0,0,0))
 
 def order_by_z(renderables):
     def get_z_index(r):
