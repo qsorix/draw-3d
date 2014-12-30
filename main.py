@@ -560,7 +560,7 @@ class Starter(PygameHelper):
                     x1, y1 = self._to_zero(b)
                     if funcs.dist(x0, y0, x1, y1, mx, my) < tolerance:
                         d = 0
-                        if x0-x1:
+                        if abs(x0-x1) > abs(y0-y1) >= 0:
                             d = (x0-mx) / (x0-x1)
                         elif y0-y1:
                             d = (y0-my) / (y0-y1)
