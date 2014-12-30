@@ -31,7 +31,6 @@ class Wall:
     def __init__(self, vertices):
         self.vertices = vertices
         self.active = False
-        self.normal() # sanity check of passed vertices
 
     def plane(self):
         return funcs.Plane(self.normal(), self.vertices[0])
@@ -464,6 +463,9 @@ class ToolWall(Tool):
             segs[-1] = S(segs[-1].b, segs[-1].a)
 
         print(segs)
+
+        if len(segs) <= 2:
+            return
 
         if segs[-1].b == segs[0].a:
             self._create_wall()
