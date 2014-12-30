@@ -39,16 +39,16 @@ class Vector:
     __rmul__ = __mul__
 
 class Plane:
-    def __init__(self, normal, v0):
+    def __init__(self, normal, p0):
         self.normal = normal
-        self.v0 = v0
+        self.p0 = p0
 
 def vector_from_to(a, b):
     return Vector(b.x-a.x, b.y-a.y, b.z-a.z)
 
 def point_to_plane_distance(plane, point):
-    sn = -dot(plane.normal, vector_from_to(plane.v0, point))
-    return sn
+    sn = -dot(plane.normal, vector_from_to(plane.p0, point))
+    return sn/length(plane.normal)
 
 def point_lies_on_segment(seg, p):
     v1 = vector_from_to(seg.a, p)
@@ -193,5 +193,8 @@ def vector_plane_intersection(l0, l, point_on_a_z_plane, N):
     return p
 
 def ray_plane_intersection(ray, plane):
-    return vector_plane_intersection(ray.p0, ray.v, plane.v0, plane.normal)
+    return vector_plane_intersection(ray.p0, ray.v, plane.p0, plane.normal)
 
+def orthogonal_plane(plane):
+    normal = Vector(plane.normal.y, plane.normal.z, plane.normal.x)
+    return Plane(normal, plane.p0)

@@ -241,33 +241,12 @@ class ToolPull(Tool):
     def __init__(self, wnd):
         self.wnd = wnd
         self.wall = False
+        self.wall_pull_point = None
         self.length = 0
 
     def activate(self):
+        self.wnd.select_nothing()
         pygame.mouse.set_cursor(*pygame.cursors.tri_right)
-        for w in self.wnd.walls:
-            if w.active:
-                self.wall = w
-                break
-
-    def _mouse_points_at(self, mx, my):
-        D = self.wnd.D
-
-        mx = mx - self.wnd.w/2
-        my = -my + self.wnd.h/2
-
-        z = 100 # self.wall.vertices[0].z # 1 # self.segment_start.z
-
-        x = mx*z/D
-        y = my*z/D
-
-        x, y, z = funcs.unrotate(x, y, z, self.wnd.camera_angle, self.wnd.camera_angle_vert)
-
-        x += self.wnd.camera.x
-        y += self.wnd.camera.y
-        z += self.wnd.camera.z
-
-        return P(x, y, z)
 
     def _shifted_walls(self, offset):
         new_walls = []
@@ -299,9 +278,19 @@ class ToolPull(Tool):
                                   self.wall.vertices[(i+1)%s]+a))
         return new_segments
 
+    def _pick_wall(self, mouse_pos):
+        objs = self.wnd.get_objects_pointed_at(*mouse_pos, type="w")
+        if objs:
+            w=objs[0][0]
+            w.active = True
+            self.wall = w
+            self.wall_pull_point = objs[0][1]
+            self.wnd.drawn_indicators = [self.wall_pull_point]
+
     def mouseUp(self, button, pos):
         if not self.wall:
-            return
+            self._pick_wall(pos)
+
         if not self.length:
             return
 
@@ -310,6 +299,7 @@ class ToolPull(Tool):
         self.wnd.drawn_walls = []
         self.wnd.drawn_segments = []
         self.wall = None
+        self.length = None
 
     def mouseMotion(self, buttons, pos, rel):
         if not self.wall:
@@ -317,34 +307,32 @@ class ToolPull(Tool):
 
         direction = funcs.unit(self.wall.normal())
 
-        mouse_at = self._mouse_points_at(*pos)
-        target_plane = funcs.Plane(direction, mouse_at)
+        wall_plane = self.wall.plane()
+        pull_plane = funcs.orthogonal_plane(wall_plane)
+        pull_plane.p0 = self.wall_pull_point
+
+        view_ray = self.wnd.get_view_ray(*pos)
+        target_point = funcs.ray_plane_intersection(view_ray, pull_plane)
+
+        target_plane = funcs.Plane(wall_plane.normal, target_point)
+        
         self.length = funcs.point_to_plane_distance(target_plane,
                                                     self.wall.vertices[0])
 
         self.wnd.drawn_walls = self._shifted_walls(self.length)
-
         self.wnd.drawn_segments = self._shifted_segments(self.length)
 
-        self.wnd.drawn_segments.append(
-            S(self.wall.vertices[0], self._mouse_points_at(*pos), purple))
 
 class ToolSelect(Tool):
     def __init__(self, wnd):
         self.wnd = wnd
-
-    def _select_nothing(self):
-        for s in self.wnd.segments:
-            s.active = False
-        for w in self.wnd.walls:
-            w.active = False
 
     def activate(self):
         pygame.mouse.set_cursor((16, 19), (0, 0), (128, 0, 192, 0, 160, 0, 144, 0, 136, 0, 132, 0, 130, 0, 129, 0, 128, 128, 128, 64, 128, 32, 128, 16, 129, 240, 137, 0, 148, 128, 164, 128, 194, 64, 2, 64, 1, 128), (128, 0, 192, 0, 224, 0, 240, 0, 248, 0, 252, 0, 254, 0, 255, 0, 255, 128, 255, 192, 255, 224, 255, 240, 255, 240, 255, 0, 247, 128, 231, 128, 195, 192, 3, 192, 1, 128))
 
     def mouseUp(self, button, pos):
         if not self.wnd.shift_down():
-            self._select_nothing()
+            self.wnd.select_nothing()
 
         objects = self.wnd.get_objects_pointed_at(pos[0], pos[1], "sw")
         if objects:
@@ -687,6 +675,13 @@ class Starter(PygameHelper):
             if start != -1 and end != -1:
                 split_wall(w, start, end)
                 break
+
+    def select_nothing(self):
+        for s in self.segments:
+            s.active = False
+        for w in self.walls:
+            w.active = False
+
 
     def points_iter(self):
         for s in self.segments:
