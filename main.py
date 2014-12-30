@@ -123,11 +123,19 @@ def order_by_z(renderables):
     renderables.sort(key=get_z_index)
 
 class Tool:
+    def __init__(self, wnd):
+        self.wnd = wnd
+
     def mouseUp(self, button, pos):
         pass
 
     def mouseMotion(self, buttons, pos, rel):
         pass
+
+    def deactivate(self):
+        self.wnd.drawn_segments = []
+        self.wnd.drawn_walls = []
+        self.wnd.drawn_indicators = []
 
     def activate(self):
         pass
@@ -513,6 +521,7 @@ class Starter(PygameHelper):
         self.camera_angle_vert = 0
         self.pressed = set()
 
+        self.tool = None
         self._set_tool(ToolSelect(self))
 
         self.segments = []
@@ -541,6 +550,8 @@ class Starter(PygameHelper):
         self.walls = [w for w in self.walls if not w.active]
 
     def _set_tool(self, tool):
+        if self.tool:
+            self.tool.deactivate()
         self.tool = tool
         self.tool.activate()
 
