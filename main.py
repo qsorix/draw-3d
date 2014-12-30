@@ -413,7 +413,7 @@ class ToolSelect(Tool):
 
         for w in wnd.walls:
             wp = self.wnd._project_wall(w)
-            if is_point_in_polygon(P(mx, my, 0), wp.vertices):
+            if wp and is_point_in_polygon(P(mx, my, 0), wp.vertices):
                 w.active = True
                 print("Wall hit!")
                 break
