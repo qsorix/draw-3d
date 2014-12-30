@@ -1,20 +1,62 @@
 from objects import Wall
+import funcs
 
-def dfs_find_cycle(v, parent):
+def _vertexes_are_on_the_same_plane(v1, v2, v3, plane_normal):
+    """Check 3 points agains a given plane. Since it is used in DFS, we only
+    care about true negatives. Initially some inputs are None and this is
+    normal, DFS should continue so it returns True."""
+
+    if not v1 or not v2 or not v3:
+        return True, plane_normal
+
+    vector1 = funcs.vector_from_to(v1.point, v2.point)
+    vector2 = funcs.vector_from_to(v2.point, v3.point)
+
+    normal = funcs.unit(funcs.cross(vector1, vector2))
+    if normal.is_zero():
+        # points lie on the same line, so they do belong to a single plane, so
+        # let's continue
+        return True, plane_normal
+
+    if not plane_normal:
+        return True, normal
+
+    #print ("Plane_normal: ", plane_normal)
+    #print ("Normal:       ", normal)
+    return (plane_normal == normal), plane_normal
+
+def _dfs_find_cycle_on_plane(v, parent, plane_normal):
+    res = []
+    all_visited = True
+
     v.dfs_mark = 1
     for n in v.neighbors:
         if n == parent:
             continue
+        if n.dfs_mark == 2:
+            continue
 
-        if n.dfs_mark != 0:
-            return [v]
+        same_plane, normal = \
+            _vertexes_are_on_the_same_plane(parent, v, n, plane_normal)
+        if not same_plane:
+            all_visited = False
+            continue
 
-        res = dfs_find_cycle(n, v)
-        if res:
-            res.append(v)
-            return res
+        if plane_normal and n.dfs_mark != 0:
+            res.append([v])
+            continue
 
-    v.dfs_mark = 2
+        if not plane_normal:
+            plane_normal = normal
+
+        sub_res = _dfs_find_cycle_on_plane(n, v, plane_normal)
+        for sr in sub_res:
+            sr.append(v)
+            res.append(sr)
+
+    if all_visited:
+        v.dfs_mark = 2
+    return res
 
 class Vertex:
     def __init__(self, point):
@@ -62,12 +104,12 @@ class Project:
             points.append(v.point)
         self.walls.append(Wall(points))
 
-    def try_spawning_walls(self, v):
+    def try_spawning_walls(self, v_start):
         for v in self.vertices:
             v.dfs_mark = 0
 
-        cycle = dfs_find_cycle(v, v)
-        if cycle:
+        cycles = _dfs_find_cycle_on_plane(v_start, None, None)
+        for cycle in cycles:
             self.create_wall_from_cycle(cycle)
 
     def add_segment(self, segment):
