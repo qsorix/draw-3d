@@ -13,6 +13,7 @@ from tools.rectangle import ToolRectangle
 from tools.line import ToolLine
 from tools.pull import ToolPull
 from tools.wall import ToolWall
+from tools.move import ToolMove
 
 from objects import S, Wall
 
@@ -449,7 +450,7 @@ class Starter(PygameHelper):
         if pygame.K_l in self.pressed:
             self._set_tool(ToolLine(self))
         if pygame.K_m in self.pressed:
-            self._set_tool(ToolPull(self))
+            self._set_tool(ToolMove(self))
         if pygame.K_p in self.pressed:
             self._set_tool(ToolPull(self))
         if pygame.K_r in self.pressed:
@@ -602,6 +603,16 @@ class Starter(PygameHelper):
     def pick_plane_not_facing_camera(self):
         return pick_plane_not_facing_camera(self.camera_angle,
                                             self.camera_angle_vert)
+
+    def move_selected(self, vector):
+        for o in self.objects_iter():
+            if not o.active:
+                continue
+
+            for p in o.vertices_iter():
+                p.x += vector.x
+                p.y += vector.y
+                p.z += vector.z
 
 s = Starter()
 
