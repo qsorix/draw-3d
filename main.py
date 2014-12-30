@@ -85,13 +85,17 @@ def order_by_z(renderables):
 
     renderables.sort(key=get_z_index)
 
-def order_by_camera_distance(camera, objects):
-    print (objects)
-    def distance(a, b):
-        return funcs.length(vector_from_to(a, b))
+def order_by_camera_distance_and_type(camera, objects):
+    def type_score(t):
+        if isinstance(t, P):
+            return 0
+        if isinstance(t, S):
+            return 1
+        return 2
+
     def camera_distance(t):
         obj, p = t
-        return funcs.length(vector_from_to(camera, p))
+        return type_score(obj) + funcs.length(vector_from_to(camera, p))
 
     objects.sort(key=camera_distance)
 
@@ -867,7 +871,7 @@ class Starter(PygameHelper):
                     p = funcs.ray_plane_intersection(view_ray, w.plane())
                     result.append((w, p))
 
-        order_by_camera_distance(self.camera, result)
+        order_by_camera_distance_and_type(self.camera, result)
 
         return result
 
