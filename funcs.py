@@ -19,6 +19,11 @@ class P:
                 abs(self.y - other.y) < 0.0001 and
                 abs(self.z - other.z) < 0.0001)
 
+class Ray:
+    def __init__(self, v, p0):
+        self.v = v # vector
+        self.p0 = p0 # point
+
 class Vector:
     def __init__(self, x, y, z):
         self.x = x

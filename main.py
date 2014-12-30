@@ -32,6 +32,9 @@ class Wall:
         self.vertices = vertices
         self.active = False
 
+    def plane(self):
+        return funcs.Plane(self.normal(), self.vertices[0])
+
     def normal(self):
         return funcs.cross(vector_from_to(self.vertices[0],
                                           self.vertices[1]),
@@ -55,6 +58,9 @@ def vector_plane_intersection(l0, l, point_on_a_z_plane, N):
 
     p = P(d*l.x + l0.x, d*l.y + l0.y, d*l.z + l0.z)
     return p
+
+def ray_plane_intersection(ray, plane):
+    return vector_plane_intersection(ray.p0, ray.v, plane.v0, plane.normal)
 
 def is_point_in_polygon(point, poly):
     x, y = point.x, point.y
@@ -240,10 +246,14 @@ class ToolLine(Tool):
 
 
     def mouseMotion(self, buttons, pos, rel):
+        mx, my = pos
+
         if not self.segment_start:
+            points = self.wnd.get_objects_pointed_at(mx, my, "psw")
+            if points:
+                self.wnd.drawn_indicators = [points[0][1]]
             return
 
-        mx, my = pos
 
         color = black
         axis_snap = False
@@ -517,6 +527,7 @@ class Starter(PygameHelper):
 
         self.segments = []
         self.drawn_segments = []
+        self.drawn_indicators = []
         self.walls = []
         self.drawn_walls = []
 
@@ -855,7 +866,39 @@ class Starter(PygameHelper):
             else:
                 self._draw_wall(r)
 
+        for i in self.drawn_indicators:
+            ip = self._project(i)
+            if ip:
+                x0, y0 = self._to_zero(ip)
+                pygame.draw.circle(self.screen, red, (x0, y0), 2)
+
+
+    def get_view_ray(self, mx, my):
+        # get a ray from camera to points under mouse
+        v = Vector(*self._camera_transform(P(0,0,1)))
+        p = self.camera + v
+        x, y, z = p.x, p.y, p.z
+
+        D = self.D
+
+        mx = mx - self.w/2
+        my = -my + self.h/2
+
+        x = mx*z/D
+        y = my*z/D
+
+        x, y, z = funcs.unrotate(x, y, z, self.camera_angle, self.camera_angle_vert)
+
+        x += self.camera.x
+        y += self.camera.y
+        z += self.camera.z
+
+        r_v = vector_from_to(self.camera, P(x, y, z))
+        return funcs.Ray(r_v, self.camera)
+
     def get_objects_pointed_at(self, mx, my, type="psw"):
+        view_ray = self.get_view_ray(mx, my)
+        # get a ray from camera to points under mouse
         # returns a list of tuples: object, snap-point
         tolerance = 8
         result = []
@@ -887,7 +930,8 @@ class Starter(PygameHelper):
             for w in self.walls:
                 wp = self._project_wall(w)
                 if wp and is_point_in_polygon(P(mx, my, 0), wp.vertices):
-                    result.append((w, w.vertices[0])) # FIXME: intersection point
+                    p = ray_plane_intersection(view_ray, w.plane())
+                    result.append((w, p))
 
         return result
 
