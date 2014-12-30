@@ -156,17 +156,16 @@ class ToolLine(Tool):
 
     def _snap_to_axis(self, mx, my):
         tolerance = 10
-        mouse_points_at = self._mouse_points_at(mx, my)
-        view_direction = vector_from_to(self.wnd.camera, mouse_points_at)
+        view_direction = self.wnd.get_view_ray(mx, my)
 
         N1 = pick_plane_facing_camera(self.wnd.camera_angle,
                                       self.wnd.camera_angle_vert)
         N2 = pick_plane_not_facing_camera(self.wnd.camera_angle,
                                           self.wnd.camera_angle_vert)
 
-        end1 = vector_plane_intersection(self.wnd.camera, view_direction,
+        end1 = vector_plane_intersection(view_direction.p0, view_direction.v,
                                          self.segment_start, N1)
-        end2 = vector_plane_intersection(self.wnd.camera, view_direction,
+        end2 = vector_plane_intersection(view_direction.p0, view_direction.v,
                                          self.segment_start, N2)
 
         points = []
@@ -192,33 +191,13 @@ class ToolLine(Tool):
 
         return None, None
 
-    def _mouse_points_at(self, mx, my):
-        D = self.wnd.D
-
-        mx = mx - self.wnd.w/2
-        my = -my + self.wnd.h/2
-
-        z = self.segment_start.z
-
-        x = mx*z/D
-        y = my*z/D
-
-        x, y, z = funcs.unrotate(x, y, z, self.wnd.camera_angle, self.wnd.camera_angle_vert)
-
-        x += self.wnd.camera.x
-        y += self.wnd.camera.y
-        z += self.wnd.camera.z
-
-        return P(x, y, z)
-
     def _free_point(self, mx, my):
-        mouse_points_at = self._mouse_points_at(mx, my)
-        view_direction = vector_from_to(self.wnd.camera, mouse_points_at)
+        view_direction = self.wnd.get_view_ray(mx, my)
 
         N = pick_plane_facing_camera(self.wnd.camera_angle,
                                      self.wnd.camera_angle_vert)
 
-        end = vector_plane_intersection(self.wnd.camera, view_direction, self.segment_start, N)
+        end = vector_plane_intersection(view_direction.p0, view_direction.v, self.segment_start, N)
         return end
 
     def activate(self):
