@@ -117,13 +117,13 @@ class Starter(PygameHelper):
         self.text = ""
 
         self.D = 500 # distance eye-screen in pixels
-        self.camera = P(-61, 35, -117)
+        self.camera = P(21, 15, 10)
         self.camera_angle = 0.4
         self.camera_angle_vert = 0
         self.pressed = set()
 
         self.tool = None
-        self._set_tool(ToolSelect(self))
+        self._set_tool(ToolLine(self))
 
         self.segments = []
         self.drawn_segments = []
@@ -132,20 +132,22 @@ class Starter(PygameHelper):
         self.walls = []
         self.drawn_walls = []
 
-        put_cube(self.segments, self.walls, 40, 0, 40, 20, red)
-        put_cube(self.segments, self.walls, -40, 0, 40, 20, green)
-        put_cube(self.segments, self.walls, 40,  0, -40, 20, blue)
-        put_cube(self.segments, self.walls, -40,  0, -40, 20, black)
-
-        for a in range(0,10,10):
-            for b in range(0,10,10):
-                self.segments.append(S(P(a, b, 1), P(a, b, 70000), green))
-                self.segments.append(S(P(a, 1, b), P(a, 70000, b), blue))
-                self.segments.append(S(P(1, a, b), P(70000, a, b), red))
-
-        self.segments.append(S(P(-1, 0, 0), P(1, 0, 0)))
-        self.segments.append(S(P(0, -1, 0), P(0, 1, 0)))
-        self.segments.append(S(P(0, 0, -1), P(0, 0, 1)))
+        self.add_segment(S(P(40, 0, 40), P(40, 20, 40), red))
+        #put_cube(self.segments, self.walls, 40, 0, 40, 20, red)
+        # put_cube(self.segments, self.walls, 40, 0, 40, 20, red)
+        # put_cube(self.segments, self.walls, -40, 0, 40, 20, green)
+        # put_cube(self.segments, self.walls, 40,  0, -40, 20, blue)
+        # put_cube(self.segments, self.walls, -40,  0, -40, 20, black)
+        #
+        # for a in range(0,10,10):
+        #     for b in range(0,10,10):
+        #         self.segments.append(S(P(a, b, 1), P(a, b, 70000), green))
+        #         self.segments.append(S(P(a, 1, b), P(a, 70000, b), blue))
+        #         self.segments.append(S(P(1, a, b), P(70000, a, b), red))
+        #
+        # self.segments.append(S(P(-1, 0, 0), P(1, 0, 0)))
+        # self.segments.append(S(P(0, -1, 0), P(0, 1, 0)))
+        # self.segments.append(S(P(0, 0, -1), P(0, 0, 1)))
 
     def set_text(self, text):
         self.text = text

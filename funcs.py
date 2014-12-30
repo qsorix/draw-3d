@@ -44,6 +44,14 @@ class Vector:
                       self.y * scalar,
                       self.z * scalar)
 
+    def __eq__(self, other):
+        return (abs(self.x - other.x) < 0.0001 and
+                abs(self.y - other.y) < 0.0001 and
+                abs(self.z - other.z) < 0.0001)
+
+    def __repr__(self):
+        return "V({0}, {1}, {2})".format(self.x, self.y, self.z)
+
     __rmul__ = __mul__
 
 def add_vectors(u, v):
