@@ -152,3 +152,46 @@ def length(a):
 
 def cos_angle(a, b):
     return dot(a, b) / (length(a)*length(b))
+
+def is_point_in_polygon(point, poly):
+    x, y = point.x, point.y
+
+    n = len(poly)
+    inside = False
+
+    p1x,p1y = poly[0].x, poly[0].y
+    for i in range(n+1):
+        p2x,p2y = poly[i % n].x, poly[i % n].y
+        if y > min(p1y,p2y):
+            if y <= max(p1y,p2y):
+                if x <= max(p1x,p2x):
+                    if p1y != p2y:
+                        xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
+                    if p1x == p2x or x <= xints:
+                        inside = not inside
+        p1x,p1y = p2x,p2y
+
+    return inside
+
+
+def vector_plane_intersection(l0, l, point_on_a_z_plane, N):
+    # Plane:
+    # (P - point_on_a_z_plane) dot N = 0
+
+    # Line:
+    # P = l0 + d*l
+
+    dd = dot(l, N)
+    if abs(dd) < 0.0001:
+        return None
+
+    d = dot(P(point_on_a_z_plane.x - l0.x,
+              point_on_a_z_plane.y - l0.y,
+              point_on_a_z_plane.z - l0.z), N) / dd
+
+    p = P(d*l.x + l0.x, d*l.y + l0.y, d*l.z + l0.z)
+    return p
+
+def ray_plane_intersection(ray, plane):
+    return vector_plane_intersection(ray.p0, ray.v, plane.v0, plane.normal)
+

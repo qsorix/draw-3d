@@ -41,47 +41,6 @@ class Wall:
                            vector_from_to(self.vertices[1],
                                           self.vertices[2]))
 
-def vector_plane_intersection(l0, l, point_on_a_z_plane, N):
-    # Plane:
-    # (P - point_on_a_z_plane) dot N = 0
-
-    # Line:
-    # P = l0 + d*l
-
-    dd = funcs.dot(l, N)
-    if abs(dd) < 0.0001:
-        return None
-
-    d = funcs.dot(P(point_on_a_z_plane.x - l0.x,
-                    point_on_a_z_plane.y - l0.y,
-                    point_on_a_z_plane.z - l0.z), N) / dd
-
-    p = P(d*l.x + l0.x, d*l.y + l0.y, d*l.z + l0.z)
-    return p
-
-def ray_plane_intersection(ray, plane):
-    return vector_plane_intersection(ray.p0, ray.v, plane.v0, plane.normal)
-
-def is_point_in_polygon(point, poly):
-    x, y = point.x, point.y
-
-    n = len(poly)
-    inside = False
-
-    p1x,p1y = poly[0].x, poly[0].y
-    for i in range(n+1):
-        p2x,p2y = poly[i % n].x, poly[i % n].y
-        if y > min(p1y,p2y):
-            if y <= max(p1y,p2y):
-                if x <= max(p1x,p2x):
-                    if p1y != p2y:
-                        xints = (y-p1y)*(p2x-p1x)/(p2y-p1y)+p1x
-                    if p1x == p2x or x <= xints:
-                        inside = not inside
-        p1x,p1y = p2x,p2y
-
-    return inside
-
 
 def pick_plane_facing_camera(alpha, beta):
     camera = Vector(*funcs.rotate(0, 0, 1, alpha, beta))
@@ -163,9 +122,9 @@ class ToolLine(Tool):
         N2 = pick_plane_not_facing_camera(self.wnd.camera_angle,
                                           self.wnd.camera_angle_vert)
 
-        end1 = vector_plane_intersection(view_direction.p0, view_direction.v,
+        end1 = funcs.vector_plane_intersection(view_direction.p0, view_direction.v,
                                          self.segment_start, N1)
-        end2 = vector_plane_intersection(view_direction.p0, view_direction.v,
+        end2 = funcs.vector_plane_intersection(view_direction.p0, view_direction.v,
                                          self.segment_start, N2)
 
         points = []
@@ -197,7 +156,7 @@ class ToolLine(Tool):
         N = pick_plane_facing_camera(self.wnd.camera_angle,
                                      self.wnd.camera_angle_vert)
 
-        end = vector_plane_intersection(view_direction.p0, view_direction.v, self.segment_start, N)
+        end = funcs.vector_plane_intersection(view_direction.p0, view_direction.v, self.segment_start, N)
         return end
 
     def activate(self):
@@ -566,7 +525,7 @@ class Starter(PygameHelper):
         # p1 is in the view, p2 is behind
         # instead of p2, we'll use the point where it intersect camera's plane
 
-        p = vector_plane_intersection(p1, vector_from_to(p1, p2),
+        p = funcs.vector_plane_intersection(p1, vector_from_to(p1, p2),
                                       P(0,0,1), Vector(0,0,1))
 
         return P(int(self.D/float(p.z)*p.x),
@@ -893,8 +852,8 @@ class Starter(PygameHelper):
         if 'w' in type:
             for w in self.walls:
                 wp = self._project_wall(w)
-                if wp and is_point_in_polygon(P(mx, my, 0), wp.vertices):
-                    p = ray_plane_intersection(view_ray, w.plane())
+                if wp and funcs.is_point_in_polygon(P(mx, my, 0), wp.vertices):
+                    p = funcs.ray_plane_intersection(view_ray, w.plane())
                     result.append((w, p))
 
         return result
