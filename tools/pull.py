@@ -4,11 +4,15 @@ import funcs
 from objects import Wall, S
 
 class ToolPull(Tool):
-    def __init__(self, wnd):
-        self.wnd = wnd
+    def reset(self):
         self.wall = False
         self.wall_pull_point = None
         self.length = 0
+        self.deactivate()
+
+    def deactivate(self):
+        Tool.deactivate(self)
+        self.wnd.select_nothing()
 
     def activate(self):
         self.wnd.select_nothing()

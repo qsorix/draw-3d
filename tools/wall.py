@@ -3,9 +3,13 @@ import pygame
 from objects import Wall, S
 
 class ToolWall(Tool):
-    def __init__(self, wnd):
-        self.wnd = wnd
+    def reset(self):
         self.picked_segments = []
+        self.deactivate()
+
+    def deactivate(self):
+        Tool.deactivate(self)
+        self.wnd.select_nothing()
 
     def _create_wall(self):
         points = []

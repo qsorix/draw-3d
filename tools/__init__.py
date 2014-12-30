@@ -1,6 +1,7 @@
 class Tool:
     def __init__(self, wnd):
         self.wnd = wnd
+        self.reset()
 
     def mouseDown(self, button, pos):
         pass
@@ -15,6 +16,10 @@ class Tool:
         self.wnd.drawn_segments = []
         self.wnd.drawn_walls = []
         self.wnd.drawn_indicators = []
+        self.wnd.plain_rects = []
+
+    def reset(self):
+        pass
 
     def activate(self):
         pass

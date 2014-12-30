@@ -6,12 +6,12 @@ from funcs import vector_from_to
 from objects import Wall, S
 
 class ToolRectangle(Tool):
-    def __init__(self, wnd):
-        self.wnd = wnd
+    def reset(self):
         self.start = None
         self.end = None
         self.drawing_plane = None
         self.side_vector = None
+        self.deactivate()
 
     def _put_rectangle(self):
         for s in self._make_rectangle(self.start, self.end, self.side_vector):

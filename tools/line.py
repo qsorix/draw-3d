@@ -12,9 +12,10 @@ class Snap:
         self.indicators = []
 
 class ToolLine(Tool):
-    def __init__(self, wnd):
-        self.wnd = wnd
+    def reset(self):
         self.segment_start = None
+        self.segment_end = None
+        self.deactivate()
 
     def _can_snap_to(self, mx, my, p):
         wnd = self.wnd

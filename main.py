@@ -457,6 +457,12 @@ class Starter(PygameHelper):
         if pygame.K_SPACE in self.pressed:
             self._set_tool(ToolSelect(self))
 
+        if pygame.K_ESCAPE in self.pressed:
+            self.tool.reset()
+
+        if pygame.K_q in self.pressed:
+            self.running = False
+
     def draw(self):
         self.screen.fill((255,255,255))
         #self._draw_zero()
