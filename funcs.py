@@ -40,10 +40,18 @@ class Vector:
 
 class Plane:
     def __init__(self, normal, p0):
+        if not normal:
+            raise Exception("Plane requires normal vector")
+        if not p0:
+            raise Exception("Plane requires contained point")
         self.normal = normal
         self.p0 = p0
 
 def vector_from_to(a, b):
+    if not a:
+        raise Exception("Missing start point")
+    if not b:
+        raise Exception("Missing end point")
     return Vector(b.x-a.x, b.y-a.y, b.z-a.z)
 
 def point_to_plane_distance(plane, point):

@@ -36,10 +36,14 @@ class Wall:
         return funcs.Plane(self.normal(), self.vertices[0])
 
     def normal(self):
-        return funcs.cross(vector_from_to(self.vertices[0],
-                                          self.vertices[1]),
-                           vector_from_to(self.vertices[1],
-                                          self.vertices[2]))
+        res = funcs.cross(vector_from_to(self.vertices[0],
+                                         self.vertices[1]),
+                          vector_from_to(self.vertices[1],
+                                         self.vertices[2]))
+        if not res:
+            raise Exception("Failed to calculate normal to a wall")
+
+        return res
 
 
 def pick_plane_facing_camera(alpha, beta):
@@ -80,6 +84,16 @@ def order_by_z(renderables):
         return -max_z
 
     renderables.sort(key=get_z_index)
+
+def order_by_camera_distance(camera, objects):
+    print (objects)
+    def distance(a, b):
+        return funcs.length(vector_from_to(a, b))
+    def camera_distance(t):
+        obj, p = t
+        return funcs.length(vector_from_to(camera, p))
+
+    objects.sort(key=camera_distance)
 
 class Tool:
     def __init__(self, wnd):
@@ -308,11 +322,13 @@ class ToolPull(Tool):
         direction = funcs.unit(self.wall.normal())
 
         wall_plane = self.wall.plane()
-        pull_plane = funcs.orthogonal_plane(wall_plane)
+        pull_plane = self.wnd.orthogonal_plane_facing_camera(wall_plane)
         pull_plane.p0 = self.wall_pull_point
 
         view_ray = self.wnd.get_view_ray(*pos)
         target_point = funcs.ray_plane_intersection(view_ray, pull_plane)
+        if not target_point:
+            return
 
         target_plane = funcs.Plane(wall_plane.normal, target_point)
         
@@ -851,9 +867,25 @@ class Starter(PygameHelper):
                     p = funcs.ray_plane_intersection(view_ray, w.plane())
                     result.append((w, p))
 
+        order_by_camera_distance(self.camera, result)
+
         return result
 
+    def orthogonal_plane_facing_camera(self, plane):
+        n1 = Vector(plane.normal.y, plane.normal.z, plane.normal.x)
+        n2 = Vector(plane.normal.z, plane.normal.x, plane.normal.y)
 
+        camera = Vector(*funcs.rotate(0, 0, 1, self.camera_angle, self.camera_angle_vert))
+
+        a1 = abs(funcs.cos_angle(n1, camera))
+        a2 = abs(funcs.cos_angle(n2, camera))
+
+        if a1 < a2:
+            normal = n1
+        else:
+            normal = n2
+
+        return funcs.Plane(normal, plane.p0)
 
 s = Starter()
 
