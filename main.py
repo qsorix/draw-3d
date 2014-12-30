@@ -434,18 +434,12 @@ class ToolWall(Tool):
             s.active = False
 
     def mouseUp(self, button, pos):
-        mx, my = pos
-        wnd = self.wnd
-        for s in wnd.segments:
-            a = wnd._project(s.a)
-            b = wnd._project(s.b)
-            if a and b:
-                x0, y0 = wnd._to_zero(a)
-                x1, y1 = wnd._to_zero(b)
-                if funcs.dist(x0, y0, x1, y1, mx, my) < 5:
-                    s.active = True
-                    self._add_segment(s)
-                    break
+        objects = self.wnd.get_objects_pointed_at(pos[0], pos[1], "s")
+        if objects:
+            s = objects[0][0]
+            s.active = True
+            self._add_segment(s)
+
 
 def put_cube(s, walls, x, y, z, w, c):
     s.append(S(P(x, y, z), P(x+w, y, z), c))
