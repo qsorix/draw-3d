@@ -44,8 +44,7 @@ class ToolRectangle(Tool):
         self.end = end
 
         if not self.drawing_plane:
-            self.drawing_plane = pick_plane_facing_camera(self.wnd.camera_angle,
-                                                          self.wnd.camera_angle_vert)
+            self.drawing_plane = self.wnd.pick_plane_facing_camera()
 
         v = funcs.get_axes_oriented_projection(self.drawing_plane, vector_from_to(self.start, end))
         self.side_vector = v

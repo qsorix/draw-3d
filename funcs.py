@@ -24,6 +24,9 @@ class P:
                 abs(self.y - other.y) < 0.0001 and
                 abs(self.z - other.z) < 0.0001)
 
+    def copy(self):
+        return P(self.x, self.y, self.z)
+
 class Ray:
     def __init__(self, v, p0):
         self.v = v # vector
@@ -217,6 +220,10 @@ def vector_vector_projection(u, v):
     if not l:
         raise Exception("direction vector is empty")
     return v * (dot(u, v) / (l*l))
+
+def plane_containing_rays(u, v):
+    normal = cross(u.v, v.v)
+    return Plane(normal, u.p0)
 
 def vector_plane_projection(u, plane):
     # project u onto plane

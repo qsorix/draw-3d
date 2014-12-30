@@ -2,6 +2,9 @@ class Tool:
     def __init__(self, wnd):
         self.wnd = wnd
 
+    def mouseDown(self, button, pos):
+        pass
+
     def mouseUp(self, button, pos):
         pass
 

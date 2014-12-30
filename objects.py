@@ -16,6 +16,10 @@ class S:
     def __repr__(self):
         return "S({0}, {1})".format(self.a, self.b)
 
+    def vertices_iter(self):
+        yield self.a
+        yield self.b
+
 class Wall:
     def __init__(self, vertices):
         self.vertices = vertices
@@ -33,3 +37,6 @@ class Wall:
             raise Exception("Failed to calculate normal to a wall")
 
         return res
+
+    def vertices_iter(self):
+        return self.vertices

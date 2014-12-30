@@ -127,6 +127,7 @@ class Starter(PygameHelper):
         self.segments = []
         self.drawn_segments = []
         self.drawn_indicators = []
+        self.plain_rects = []
         self.walls = []
         self.drawn_walls = []
 
@@ -384,12 +385,21 @@ class Starter(PygameHelper):
             yield s.a
             yield s.b
 
+    def objects_iter(self):
+        for s in self.segments:
+            yield s
+        for w in self.walls:
+            yield w
+
     def keyDown(self, key):
         self.pressed.add(key)
         print(key)
 
     def keyUp(self, key):
         self.pressed.discard(key)
+
+    def mouseDown(self, button, pos):
+        self.tool.mouseDown(button, pos)
 
     def mouseUp(self, button, pos):
         self.tool.mouseUp(button, pos)
@@ -490,6 +500,9 @@ class Starter(PygameHelper):
 
         text = self.font.render(self.text, True, (0,0,0))
         self.screen.blit(text, (self.w-max(100, text.get_width()), self.h-text.get_height()))
+
+        for r in self.plain_rects:
+            pygame.draw.rect(self.screen, black, r, 1)
 
 
     def get_view_ray(self, mx, my):

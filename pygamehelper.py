@@ -37,6 +37,8 @@ class PygameHelper:
                 if event.key == K_ESCAPE:
                     self.running = False
                 self.keyUp(event.key)
+            elif event.type == MOUSEBUTTONDOWN:
+                self.mouseDown(event.button, event.pos)
             elif event.type == MOUSEBUTTONUP:
                 self.mouseUp(event.button, event.pos)
             elif event.type == MOUSEMOTION:
@@ -75,6 +77,9 @@ class PygameHelper:
     def keyUp(self, key):
         pass
     
+    def mouseDown(self, button, pos):
+        pass
+
     def mouseUp(self, button, pos):
         pass
         
