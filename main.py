@@ -326,6 +326,10 @@ class ToolLine(Tool):
                             self.wnd.drawn_segments.append(
                                 S(self.segment_end, p, gray))
 
+        if self.segment_start and self.segment_end:
+            self.wnd.set_text("{0:.2f} cm".format(funcs.length(vector_from_to(self.segment_start,
+                                                                     self.segment_end))))
+
 class ToolPull(Tool):
     def __init__(self, wnd):
         self.wnd = wnd
@@ -515,6 +519,8 @@ class Starter(PygameHelper):
         self.w, self.h = 800, 600
         PygameHelper.__init__(self, size=(self.w, self.h),
                               fill=((255,255,255)))
+        self.font = pygame.font.SysFont('Arial', 14)
+        self.text = ""
 
         self.D = 500 # distance eye-screen in pixels
         self.camera = P(-61, 35, -117)
@@ -545,6 +551,9 @@ class Starter(PygameHelper):
         self.segments.append(S(P(-1, 0, 0), P(1, 0, 0)))
         self.segments.append(S(P(0, -1, 0), P(0, 1, 0)))
         self.segments.append(S(P(0, 0, -1), P(0, 0, 1)))
+
+    def set_text(self, text):
+        self.text = text
 
     def _delete_active_segments(self):
         self.segments = [s for s in self.segments if not s.active]
@@ -885,6 +894,9 @@ class Starter(PygameHelper):
             if ip:
                 x0, y0 = self._to_zero(ip)
                 pygame.draw.circle(self.screen, red, (x0, y0), 2)
+
+        text = self.font.render(self.text, True, (0,0,0))
+        self.screen.blit(text, (self.w-max(100, text.get_width()), self.h-text.get_height()))
 
 
     def get_view_ray(self, mx, my):
