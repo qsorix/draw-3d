@@ -374,35 +374,25 @@ class ToolSelect(Tool):
     def __init__(self, wnd):
         self.wnd = wnd
 
+    def _select_nothing(self):
+        for s in self.wnd.segments:
+            s.active = False
+        for w in self.wnd.walls:
+            w.active = False
+
     def activate(self):
         pygame.mouse.set_cursor((16, 19), (0, 0), (128, 0, 192, 0, 160, 0, 144, 0, 136, 0, 132, 0, 130, 0, 129, 0, 128, 128, 128, 64, 128, 32, 128, 16, 129, 240, 137, 0, 148, 128, 164, 128, 194, 64, 2, 64, 1, 128), (128, 0, 192, 0, 224, 0, 240, 0, 248, 0, 252, 0, 254, 0, 255, 0, 255, 128, 255, 192, 255, 224, 255, 240, 255, 240, 255, 0, 247, 128, 231, 128, 195, 192, 3, 192, 1, 128))
 
     def mouseUp(self, button, pos):
-        mx, my = pos
-        wnd = self.wnd
+        if not self.wnd.shift_down():
+            self._select_nothing()
 
-        for s in wnd.segments:
-            s.active = False
-
-        for w in wnd.walls:
-            w.active = False
-
-        for w in wnd.walls:
-            wp = self.wnd._project_wall(w)
-            if wp and is_point_in_polygon(P(mx, my, 0), wp.vertices):
-                w.active = True
-                print("Wall hit!")
-                break
-
-        for s in wnd.segments:
-            a = wnd._project(s.a)
-            b = wnd._project(s.b)
-            if a and b:
-                x0, y0 = wnd._to_zero(a)
-                x1, y1 = wnd._to_zero(b)
-                if funcs.dist(x0, y0, x1, y1, mx, my) < 5:
-                    s.active = True
-                    break
+        objects = self.wnd.get_objects_pointed_at(pos[0], pos[1], "sw")
+        if objects:
+            if self.wnd.shift_down():
+                objects[0][0].active = not objects[0][0].active
+            else:
+                objects[0][0].active = True
 
 class ToolWall(Tool):
     def __init__(self, wnd):
@@ -763,12 +753,12 @@ class Starter(PygameHelper):
     def mouseMotion(self, buttons, pos, rel):
         self.tool.mouseMotion(buttons, pos, rel)
 
-    def update(self):
-        shift_down = False
+    def shift_down(self):
         if 303 in self.pressed or 304 in self.pressed:
-            shift_down = True
+            return True
 
-        if shift_down:
+    def update(self):
+        if self.shift_down():
             if 273 in self.pressed: # up
                 self._move_camera(0, 1, 0)
             if 274 in self.pressed: # down
