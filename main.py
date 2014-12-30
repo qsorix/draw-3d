@@ -117,6 +117,67 @@ class Tool:
     def activate(self):
         pass
 
+class ToolRectangle(Tool):
+    def __init__(self, wnd):
+        self.wnd = wnd
+        self.start = None
+        self.end = None
+        self.drawing_plane = None
+        self.v1 = None
+        self.v2 = None
+
+    def _put_rectangle(self):
+        self.wnd.add_segment(S(self.start, self.start+self.v1))
+        self.wnd.add_segment(S(self.start, self.start+self.v2))
+        self.wnd.add_segment(S(self.start+self.v1, self.end))
+        self.wnd.add_segment(S(self.start+self.v2, self.end))
+
+    def activate(self):
+        pygame.mouse.set_cursor((8, 8), (4, 4), (24, 24, 24, 231, 231, 24, 24, 24), (0, 0, 0, 0, 0, 0, 0, 0))
+
+    def mouseMotion(self, buttons, pos, rel):
+        points = self.wnd.get_objects_pointed_at(*pos)
+
+        if not self.start:
+            if points:
+                self.wnd.drawn_indicators = [points[0][1]]
+            return
+
+        if points:
+            end = points[0][1]
+        else:
+            return
+
+        self.end = end
+
+        v1, v2 = funcs.get_axes_oriented_projections(self.drawing_plane, vector_from_to(self.start, end))
+        self.v1 = v1
+        self.v2 = v2
+
+        self.wnd.drawn_segments = [S(self.start, end, gray)]
+        self.wnd.drawn_segments.append(S(self.start, self.start+v1))
+        self.wnd.drawn_segments.append(S(self.start, self.start+v2))
+        self.wnd.drawn_segments.append(S(self.start+v1, end))
+        self.wnd.drawn_segments.append(S(self.start+v2, end))
+        self.wnd.drawn_indicators = [self.start, end]
+
+    def mouseUp(self, button, pos):
+        if not self.start:
+            objects = self.wnd.get_objects_pointed_at(*pos, type="w")
+            if objects:
+                self.drawing_plane = objects[0][0].plane()
+                self.start = objects[0][1]
+            return
+
+        if self.start and self.end:
+            self._put_rectangle()
+            self.start = None
+            self.end = None
+            self.v1 = None
+            self.v2 = None
+            self.wnd.drawn_segments = []
+            self.wnd.drawn_indicators = []
+
 class ToolLine(Tool):
     def __init__(self, wnd):
         self.wnd = wnd
@@ -765,6 +826,8 @@ class Starter(PygameHelper):
             self._set_tool(ToolLine(self))
         if 112 in self.pressed: # 'P'
             self._set_tool(ToolPull(self))
+        if 114 in self.pressed: # 'R'
+            self._set_tool(ToolRectangle(self))
         if 32 in self.pressed: # space
             self._set_tool(ToolSelect(self))
 
