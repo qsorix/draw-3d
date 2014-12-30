@@ -31,6 +31,7 @@ class Wall:
     def __init__(self, vertices):
         self.vertices = vertices
         self.active = False
+        self.normal() # sanity check of passed vertices
 
     def plane(self):
         return funcs.Plane(self.normal(), self.vertices[0])
@@ -40,7 +41,7 @@ class Wall:
                                          self.vertices[1]),
                           vector_from_to(self.vertices[1],
                                          self.vertices[2]))
-        if not res:
+        if not res or not funcs.length(res):
             raise Exception("Failed to calculate normal to a wall")
 
         return res
@@ -651,7 +652,10 @@ class Starter(PygameHelper):
                 return
             px, py = self._to_zero(p)
             points.append(P(px, py, p.z))
-        res = Wall(points)
+        try:
+            res = Wall(points)
+        except:
+            return None
         res.active = w.active
         return res
 
