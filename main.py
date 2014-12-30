@@ -393,7 +393,6 @@ class Starter(PygameHelper):
 
     def keyDown(self, key):
         self.pressed.add(key)
-        print(key)
 
     def keyUp(self, key):
         self.pressed.discard(key)
@@ -408,52 +407,54 @@ class Starter(PygameHelper):
         self.tool.mouseMotion(buttons, pos, rel)
 
     def shift_down(self):
-        if 303 in self.pressed or 304 in self.pressed:
+        if pygame.K_LSHIFT in self.pressed or pygame.K_RSHIFT in self.pressed:
             return True
 
     def update(self):
         if self.shift_down():
-            if 273 in self.pressed: # up
+            if pygame.K_UP in self.pressed:
                 self._move_camera(0, 1, 0)
-            if 274 in self.pressed: # down
+            if pygame.K_DOWN in self.pressed:
                 self._move_camera(0, -1, 0)
         else:
-            if 273 in self.pressed: # up
+            if pygame.K_UP in self.pressed:
                 self._move_camera(0, 0, 1)
-            if 274 in self.pressed: # down
+            if pygame.K_DOWN in self.pressed:
                 self._move_camera(0, 0, -1)
 
-        if 97 in self.pressed: # A
+        if pygame.K_a in self.pressed:
             self.camera_angle -= 0.03
-        if 100 in self.pressed: # D
+        if pygame.K_d in self.pressed:
             self.camera_angle += 0.03
-        if 115 in self.pressed: # S
+        if pygame.K_s in self.pressed:
             self.camera_angle_vert += 0.03
-        if 119 in self.pressed: # W
+        if pygame.K_w in self.pressed:
             self.camera_angle_vert -= 0.03
 
-        if 275 in self.pressed: # right
+        if pygame.K_RIGHT in self.pressed:
             self._move_camera(1, 0, 0)
-        if 276 in self.pressed: # left
+        if pygame.K_LEFT in self.pressed:
             self._move_camera(-1, 0, 0)
 
-        if 127 in self.pressed: # delete
+        if pygame.K_DELETE in self.pressed:
             self._delete_active_segments()
 
-        if 280 in self.pressed: # page-up
+        if pygame.K_PAGEUP in self.pressed:
             self.D += 10.0
-        if 281 in self.pressed: # page-down
+        if pygame.K_PAGEDOWN in self.pressed:
             self.D -= 10.0
 
-        if 102 in self.pressed: # 'F'
+        if pygame.K_f in self.pressed:
             self._set_tool(ToolWall(self))
-        if 108 in self.pressed: # 'L'
+        if pygame.K_l in self.pressed:
             self._set_tool(ToolLine(self))
-        if 112 in self.pressed: # 'P'
+        if pygame.K_m in self.pressed:
             self._set_tool(ToolPull(self))
-        if 114 in self.pressed: # 'R'
+        if pygame.K_p in self.pressed:
+            self._set_tool(ToolPull(self))
+        if pygame.K_r in self.pressed:
             self._set_tool(ToolRectangle(self))
-        if 32 in self.pressed: # space
+        if pygame.K_SPACE in self.pressed:
             self._set_tool(ToolSelect(self))
 
     def draw(self):
