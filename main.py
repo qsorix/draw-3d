@@ -17,6 +17,8 @@ from tools.move import ToolMove
 
 from objects import S, Wall
 
+import project
+
 
 
 def pick_plane_facing_camera(alpha, beta):
@@ -110,6 +112,7 @@ def put_cube(s, walls, x, y, z, w, c):
 
 class Starter(PygameHelper):
     def __init__(self):
+        self.project = project.Project()
         self.w, self.h = 800, 600
         PygameHelper.__init__(self, size=(self.w, self.h),
                               fill=((255,255,255)))
@@ -125,11 +128,11 @@ class Starter(PygameHelper):
         self.tool = None
         self._set_tool(ToolLine(self))
 
-        self.segments = []
+        self.segments = self.project.segments #[]
         self.drawn_segments = []
         self.drawn_indicators = []
         self.plain_rects = []
-        self.walls = []
+        self.walls = self.project.walls #[]
         self.drawn_walls = []
 
         self.add_segment(S(P(40, 0, 40), P(40, 20, 40), red))
@@ -153,8 +156,8 @@ class Starter(PygameHelper):
         self.text = text
 
     def _delete_active_segments(self):
-        self.segments = [s for s in self.segments if not s.active]
-        self.walls = [w for w in self.walls if not w.active]
+        self.segments[:] = [s for s in self.segments if not s.active]
+        self.walls[:] = [w for w in self.walls if not w.active]
 
     def _set_tool(self, tool):
         if self.tool:
@@ -320,6 +323,9 @@ class Starter(PygameHelper):
         pygame.draw.circle(self.screen, color, (10, 10), 15)
 
     def add_segment(self, s):
+        r = self.project.add_segment(s)
+        print (self.segments)
+        return r
         def split_wall(w, start, end):
             if start > end:
                 start, end = end, start
