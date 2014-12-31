@@ -208,6 +208,40 @@ def is_point_in_polygon(point, poly):
 
     return inside
 
+def segment_segment_intersection(p1, p2, p3, p4):
+    # check if segments p1-p2, and p3-p4 intersect
+    # if so, return intersection point
+
+    v12 = vector_from_to(p1, p2)
+    v13 = vector_from_to(p1, p3)
+    v14 = vector_from_to(p1, p4)
+    v34 = vector_from_to(p3, p4)
+
+    # if all points don't belong to the same plane, segments are skew and cannot
+    # intersect
+    if dot(v12, cross(v13, v14)) > 0.0001:
+        return None
+
+    # if segments are parallel, they don't intersect. cases when endpoints match
+    # or segments overlap are ignored
+
+    c1234 = cross(v12, v34)
+
+    if c1234.is_zero():
+        return None
+
+    cc = dot(c1234, c1234)
+
+    # now find intersection of two lines, then check if intersection point
+    # belongs to both segments
+
+    ka = dot(cross(v13, v34), c1234) / cc
+    kb = dot(cross(v13, v12), c1234) / cc
+
+    if 0 <= ka <= 1 and 0 <= kb <= 1:
+        return p1 + v12*ka
+
+
 
 def vector_plane_intersection(l0, l, point_on_a_z_plane, N):
     # Plane:

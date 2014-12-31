@@ -113,6 +113,21 @@ class Project:
             self.create_wall_from_cycle(cycle)
 
     def add_segment(self, segment):
+        for s in self.segments:
+            intersection = funcs.segment_segment_intersection(s.a, s.b,
+                                                              segment.a,
+                                                              segment.b)
+            if intersection:
+                v = self.add_vertex(intersection)
+                v1 = self.get_vertex(s.a)
+                v2 = self.get_vertex(s.b)
+                v3 = self.add_vertex(segment.a)
+                v4 = self.add_vertex(segment.b)
+                self.add_neighborhood(v, v1)
+                self.add_neighborhood(v, v2)
+                self.add_neighborhood(v, v3)
+                self.add_neighborhood(v, v4)
+
         self.segments.append(segment)
         va = self.add_vertex(segment.a)
         vb = self.add_vertex(segment.b)
