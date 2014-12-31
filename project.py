@@ -62,11 +62,8 @@ def _dfs_find_cycle_on_plane(v, parent, plane_normal, start, first_step):
             #print ("  mark set")
             continue
 
-        if not plane_normal:
-            plane_normal = normal
-
         #print ("   -> ")
-        sub_res = _dfs_find_cycle_on_plane(n, v, plane_normal, start, first_step)
+        sub_res = _dfs_find_cycle_on_plane(n, v, normal, start, first_step)
         for sr in sub_res:
             if sr[0] != sr[-1]:
                 sr.append(v)
