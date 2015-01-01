@@ -292,6 +292,10 @@ class Starter(PygameHelper):
                             color,
                             points)
 
+    def _draw_point(self, p):
+        x0, y0 = self._to_zero(p)
+        pygame.draw.circle(self.screen, cyan, (x0, y0), 2)
+
     def _to_zero(self, p):
         x, y = p.x, p.y;
         return [int(x + self.w/2), int(-y + self.h/2)]
@@ -500,13 +504,20 @@ class Starter(PygameHelper):
             if w:
                 to_render.append(w)
 
+        for v in self.project.vertices:
+            v = self._project(v.point)
+            if v:
+                to_render.append(v)
+
         order_by_z(to_render)
 
         for r in to_render:
             if isinstance(r, S):
                 self._draw_segment(r)
-            else:
+            elif isinstance(r, Wall):
                 self._draw_wall(r)
+            else:
+                self._draw_point(r)
 
         for i in self.drawn_indicators:
             ip = self._project(i)
