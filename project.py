@@ -35,12 +35,11 @@ def clockwise_sorted(parent, nodes, plane_normal):
     if len(nodes) <= 1:
         return nodes
 
-    if not plane_normal:
-        return nodes
+    plane_normal = funcs.Vector(1.12, 2.23, 3.34)
 
-    vector_on_the_plane = funcs.Vector(plane_normal.y,
-                                       plane_normal.z,
-                                       plane_normal.x)
+    vector_on_the_plane = funcs.Vector(plane_normal.z,
+                                       plane_normal.x,
+                                       plane_normal.y)
 
     def nodes_angle(node):
         projected = funcs.vector_plane_projection(
@@ -49,10 +48,17 @@ def clockwise_sorted(parent, nodes, plane_normal):
 
         x = funcs.vector_vector_projection(projected, vector_on_the_plane)
         y = funcs.sub_vectors(projected, x)
-        return math.atan2(funcs.length(x),
-                          funcs.length(y))
+        print(projected, x, y)
+        # in x and y only one direction is non-zero, but i don't know which, so
+        # i sum them up...
+        return math.atan2(x.x+x.y+x.z,
+                          y.x+y.y+y.z)
 
     return sorted(nodes, key=nodes_angle)
+
+class Backtrack(Exception):
+    def __init__(self, node):
+        self.node = node
 
 def _dfs_fcp_impl(node, plane_normal, cycle, results):
     for nbr in clockwise_sorted(node, node.neighbors, plane_normal):
@@ -65,7 +71,7 @@ def _dfs_fcp_impl(node, plane_normal, cycle, results):
             return True
 
         if nbr in cycle:
-            return False
+            raise Backtrack(nbr)
 
         normal = None
         if len(cycle) >= 2:
@@ -78,11 +84,16 @@ def _dfs_fcp_impl(node, plane_normal, cycle, results):
 
         cycle.append(nbr)
         print ("  ", cycle)
-        found = _dfs_fcp_impl(nbr, normal, cycle, results)
-        if found:
-            results.append(cycle.copy())
-            if plane_normal:
-                return True
+        try:
+            found = _dfs_fcp_impl(nbr, normal, cycle, results)
+            if found:
+                results.append(cycle.copy())
+                if plane_normal:
+                    return True
+        except Backtrack as btr:
+            if btr.node != nbr:
+                cycle.pop()
+                raise
         cycle.pop()
 
     return False
@@ -90,7 +101,10 @@ def _dfs_fcp_impl(node, plane_normal, cycle, results):
 def _dfs_find_cycle_on_plane(va, vb):
     cycle = [va, vb]
     results = []
-    _dfs_fcp_impl(vb, funcs.Vector(0, 0, 1), cycle, results)
+    try:
+        _dfs_fcp_impl(vb, None, cycle, results)
+    except Backtrack:
+        pass
     return results
 
 class Vertex:
