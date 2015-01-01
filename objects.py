@@ -29,14 +29,17 @@ class Wall:
         return funcs.Plane(self.normal(), self.vertices[0])
 
     def normal(self):
-        res = funcs.cross(vector_from_to(self.vertices[0],
-                                         self.vertices[1]),
-                          vector_from_to(self.vertices[1],
-                                         self.vertices[2]))
-        if not res or not funcs.length(res):
-            raise Exception("Failed to calculate normal to a wall")
+        v1 = vector_from_to(self.vertices[0],
+                            self.vertices[1])
+        for i in range(2, len(self.vertices)-1):
+            v2 = vector_from_to(self.vertices[i-1],
+                                self.vertices[i])
 
-        return res
+            n = funcs.cross(v1, v2)
+            if n and not n.is_zero():
+                return n
+
+        raise Exception("Failed to calculate normal to a wall")
 
     def vertices_iter(self):
         return self.vertices

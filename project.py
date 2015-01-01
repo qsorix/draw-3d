@@ -1,5 +1,6 @@
 from objects import Wall
 import funcs
+import math
 
 def _totuple(p):
     return (p.x, p.y, p.z)
@@ -30,49 +31,67 @@ def _vertexes_are_on_the_same_plane(v1, v2, v3, plane_normal):
     nc = funcs.cross(plane_normal, normal)
     return nc.is_zero(), plane_normal
 
-def _dfs_find_cycle_on_plane(v, parent, plane_normal, start, first_step):
-    #print ("> ", v, parent, plane_normal)
-    res = []
-    all_visited = True
+def clockwise_sorted(parent, nodes, plane_normal):
+    if len(nodes) <= 1:
+        return nodes
 
-    v.dfs_mark = 1
-    for n in v.neighbors:
-        if v == start and n != first_step:
-            #print ("  n != first_step")
+    if not plane_normal:
+        return nodes
+
+    vector_on_the_plane = funcs.Vector(plane_normal.y,
+                                       plane_normal.z,
+                                       plane_normal.x)
+
+    def nodes_angle(node):
+        projected = funcs.vector_plane_projection(
+            funcs.vector_from_to(parent.point, node.point),
+            funcs.Plane(plane_normal, parent))
+
+        x = funcs.vector_vector_projection(projected, vector_on_the_plane)
+        y = funcs.sub_vectors(projected, x)
+        return math.atan2(funcs.length(x),
+                          funcs.length(y))
+
+    return sorted(nodes, key=nodes_angle)
+
+def _dfs_fcp_impl(node, plane_normal, cycle, results):
+    for nbr in clockwise_sorted(node, node.neighbors, plane_normal):
+        print ("> ", node, nbr, cycle)
+        if nbr == cycle[-2]:
             continue
 
-        if n == parent:
-            #print ("  n == parent")
-            continue
+        if nbr == cycle[0]:
+            print ("!", node, nbr, cycle)
+            return True
 
-        same_plane, normal = \
-            _vertexes_are_on_the_same_plane(parent, v, n, plane_normal)
+        if nbr in cycle:
+            return False
 
-        if not same_plane:
-            #print ("  not same plane")
-            all_visited = False
-            continue
+        normal = None
+        if len(cycle) >= 2:
+            same_plane, normal = _vertexes_are_on_the_same_plane(cycle[-2],
+                                                                 cycle[-1], nbr,
+                                                                 plane_normal)
 
-        if plane_normal and n == start:
-            #print ("  hit!")
-            res.append([n, v])
-            continue
+            if not same_plane:
+                continue
 
-        if n.dfs_mark == 1:
-            #print ("  mark set")
-            continue
+        cycle.append(nbr)
+        print ("  ", cycle)
+        found = _dfs_fcp_impl(nbr, normal, cycle, results)
+        if found:
+            results.append(cycle.copy())
+            if plane_normal:
+                return True
+        cycle.pop()
 
-        #print ("   -> ")
-        sub_res = _dfs_find_cycle_on_plane(n, v, normal, start, first_step)
-        for sr in sub_res:
-            if sr[0] != sr[-1]:
-                sr.append(v)
-            res.append(sr)
+    return False
 
-    if all_visited:
-        v.dfs_mark = 2
-    #print ("< ", v, parent, plane_normal, res)
-    return res
+def _dfs_find_cycle_on_plane(va, vb):
+    cycle = [va, vb]
+    results = []
+    _dfs_fcp_impl(vb, funcs.Vector(0, 0, 1), cycle, results)
+    return results
 
 class Vertex:
     def __init__(self, point):
@@ -116,7 +135,7 @@ class Project:
 
     def create_wall_from_cycle(self, cycle):
         points = []
-        for v in cycle[1:]:
+        for v in cycle:
             points.append(v.point)
 
         new_points = sorted(points, key=_totuple)
@@ -128,14 +147,14 @@ class Project:
                 # such wall exists already
                 return
 
-        print ("Adding a wall on ", new_points)
+        print ("Adding a wall on ", points)
         self.walls.append(Wall(points))
 
     def try_spawning_walls(self, va, vb):
         for v in self.vertices:
             v.dfs_mark = 0
 
-        cycles = _dfs_find_cycle_on_plane(va, None, None, va, vb)
+        cycles = _dfs_find_cycle_on_plane(va, vb)
         for cycle in cycles:
             self.create_wall_from_cycle(cycle)
 

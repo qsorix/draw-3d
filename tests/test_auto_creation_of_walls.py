@@ -22,7 +22,7 @@ def test_adding_4_sides_will_create_a_wall():
 
     assert_equals(len(proj.walls), 1)
 
-    assert_equals(proj.walls[0].normal(), V(0, 0, -1))
+    assert_equals(proj.walls[0].normal(), V(0, 0, 1))
 
 def test_adding_2_sides_will_not_create_a_wall():
     proj = project.Project()
@@ -89,6 +89,7 @@ def test_created_wall_must_include_just_added_segment():
     proj = project.Project()
     proj.add_segment(S(P(0, 0, 0), P(1, 0, 0)))
     proj.add_segment(S(P(1, 0, 0), P(1, 1, 0)))
+    print ("###################")
     proj.add_segment(S(P(1, 1, 0), P(0, 0, 0)))
     assert_equals(len(proj.walls), 1)
     proj.walls[:] = []
@@ -96,3 +97,29 @@ def test_created_wall_must_include_just_added_segment():
     proj.add_segment(S(P(-1, 0, 0), P(0, 0, 0)))
 
     assert_equals(len(proj.walls), 0)
+
+def test_created_walls_are_not_overlapping_other_surfaces():
+    # +-----+
+    # |xxxxx|
+    # |xx+--+
+    # |xx|  |
+    # +--+--+
+
+    proj = project.Project()
+    proj.add_segment(S(P(0, 0, 0), P(1, 0, 0)))
+    proj.add_segment(S(P(1, 0, 0), P(2, 0, 0)))
+    proj.add_segment(S(P(1, 0, 0), P(1, 1, 0)))
+    proj.add_segment(S(P(2, 0, 0), P(2, 1, 0)))
+    proj.add_segment(S(P(1, 1, 0), P(2, 1, 0)))
+    assert_equals(len(proj.walls), 1)
+    proj.walls[:] = []
+
+    proj.add_segment(S(P(0, 0, 0), P(0, 2, 0)))
+    proj.add_segment(S(P(2, 1, 0), P(2, 2, 0)))
+    proj.add_segment(S(P(0, 2, 0), P(2, 2, 0)))
+
+    assert_equals(len(proj.walls), 1)
+    w = proj.walls[0]
+    assert_equals(len(w.vertices), 6)
+    print("Nghs of 0,2: ", proj.get_vertex(P(0,2,0)).neighbors)
+    assert P(1, 1, 0) in w.vertices
