@@ -48,6 +48,13 @@ def pick_plane_not_facing_camera(alpha, beta):
 
     return funcs.Plane(Vector(n.y, n.z, n.x), P(0,0,0))
 
+def type_score(t):
+    if isinstance(t, P):
+        return 0
+    if isinstance(t, S):
+        return 1
+    return 2
+
 def order_by_z(renderables):
     def get_z_index(r):
         max_z = 0
@@ -56,17 +63,13 @@ def order_by_z(renderables):
         elif isinstance(r, Wall):
             for v in r.vertices:
                 max_z = max(max_z, v.z)
-        return -max_z
+        elif isinstance(r, P):
+            max_z = r.z
+        return (-max_z, -type_score(r))
 
     renderables.sort(key=get_z_index)
 
 def order_by_camera_distance_and_type(camera, objects):
-    def type_score(t):
-        if isinstance(t, P):
-            return 0
-        if isinstance(t, S):
-            return 1
-        return 2
 
     def camera_distance(t):
         obj, p = t
@@ -337,61 +340,6 @@ class Starter(PygameHelper):
         r = self.project.add_segment(s)
         print (self.segments)
         return r
-        def split_wall(w, start, end):
-            if start > end:
-                start, end = end, start
-
-            if end-start < 2:
-                return
-
-            print(w.vertices, start, end)
-
-            old_wall_vertices = w.vertices[start:end+1]
-            if end+1 > len(w.vertices):
-                old_wall_vertices.append(w.vertices[0])
-            print(old_wall_vertices)
-            new_wall_vertices = w.vertices[end:]+w.vertices[:start+1]
-            print(new_wall_vertices)
-
-            self.walls.append(Wall(new_wall_vertices))
-            w.vertices = old_wall_vertices
-
-        new_segments = [s]
-        def split_segment(s, p):
-            for w in self.walls:
-                V = len(w.vertices)
-                for i in range(V):
-                    if ((w.vertices[i] == s.a and w.vertices[(i+1)%V] == s.b) or
-                        (w.vertices[i] == s.b and w.vertices[(i+1)%V] == s.a)):
-                        w.vertices.insert(i+1, p)
-                        print(w)
-                        break
-
-            new_segments.append(S(p, s.b))
-            s.b = p
-
-        for ss in self.segments:
-            if ss.a != s.a and ss.b != s.a and funcs.point_lies_on_segment(ss, s.a):
-                split_segment(ss, s.a)
-
-            if ss.a != s.b and ss.b != s.b and funcs.point_lies_on_segment(ss, s.b):
-                split_segment(ss, s.b)
-
-        print("Segs: ", new_segments)
-        self.segments.extend(new_segments)
-
-        for w in self.walls:
-            start = -1
-            end = -1
-            for i in range(len(w.vertices)):
-                if s.a == w.vertices[i]:
-                    start = i
-                if s.b == w.vertices[i]:
-                    end = i
-
-            if start != -1 and end != -1:
-                split_wall(w, start, end)
-                break
 
     def select_nothing(self):
         for s in self.segments:
