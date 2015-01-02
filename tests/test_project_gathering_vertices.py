@@ -12,7 +12,7 @@ def test_adding_segment_introduces_vertices_from_endpoints():
 def test_existing_vertices_are_not_duplicated():
     proj = project.Project()
     proj.add_segment(S(P(0, 0, 0), P(1, 0, 0)))
-    proj.add_segment(S(P(1, 0, 0), P(2, 0, 0)))
+    proj.add_segment(S(P(1, 0, 0), P(1, 1, 0)))
 
     assert_equals(len(proj.vertices), 3)
 

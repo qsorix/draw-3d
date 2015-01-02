@@ -96,3 +96,40 @@ def test_removing_segments_can_simplify_previously_intersected_segment():
     proj.del_segment(S(p3, p4))
     assert_equals(len(proj.segments), 1)
     assert_equals(len(proj.vertices), 2)
+
+def test_extending_segment_heals_the_ends():
+    p1, p2 = P(0, 0, 0),  P(1, 0, 0)
+    p3 = P(2, 0, 0)
+    p4 = P(-1, 0, 0)
+    proj = project.Project()
+    proj.add_segment(S(p1, p2))
+    proj.add_segment(S(p2, p3))
+
+    assert_equals(len(proj.segments), 1)
+    assert_equals(len(proj.vertices), 2)
+    assert proj.get_vertex(p1)
+    assert proj.get_vertex(p3)
+
+    proj.add_segment(S(p4, p1))
+
+    assert_equals(len(proj.segments), 1)
+    assert_equals(len(proj.vertices), 2)
+    assert proj.get_vertex(p4)
+    assert proj.get_vertex(p3)
+
+def test_joining_segments_heals_the_ends():
+    p1, p2 = P(0, 0, 0),  P(1, 0, 0)
+    p3, p4 = P(2, 0, 0),  P(3, 0, 0)
+    proj = project.Project()
+    proj.add_segment(S(p1, p2))
+    proj.add_segment(S(p3, p4))
+
+    assert_equals(len(proj.segments), 2)
+    assert_equals(len(proj.vertices), 4)
+
+    proj.add_segment(S(p2, p3))
+
+    assert_equals(len(proj.segments), 1)
+    assert_equals(len(proj.vertices), 2)
+    assert proj.get_vertex(p1)
+    assert proj.get_vertex(p4)

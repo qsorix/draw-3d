@@ -237,6 +237,9 @@ class Project:
         self.segments.append(segment)
         self.add_neighborhood(va, vb)
 
+        self._try_simplifying_vertex(va)
+        self._try_simplifying_vertex(vb)
+
         #self.try_spawning_walls(va, vb_final)
 
     def _try_simplifying_vertex(self, v):
@@ -257,7 +260,10 @@ class Project:
                 v2.neighbors.remove(v)
                 self._del_segment_from_list(S(v1.point, v.point))
                 self._del_segment_from_list(S(v.point, v2.point))
-                self.add_segment(S(v1.point, v2.point))
+
+                self.segments.append(S(v1.point, v2.point))
+                self.add_neighborhood(v1, v2)
+
                 self.vertices.remove(v)
 
     def _del_segment_from_list(self, segment):
