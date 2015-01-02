@@ -240,7 +240,7 @@ class Project:
         self._try_simplifying_vertex(va)
         self._try_simplifying_vertex(vb)
 
-        #self.try_spawning_walls(va, vb_final)
+        self.try_spawning_walls(va, vb_final)
 
     def _try_simplifying_vertex(self, v):
         if not v.neighbors:

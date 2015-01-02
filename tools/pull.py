@@ -65,7 +65,8 @@ class ToolPull(Tool):
             return
 
         self.wnd.walls.extend(self._shifted_walls(self.length))
-        self.wnd.segments.extend(self._shifted_segments(self.length))
+        for s in self._shifted_segments(self.length):
+            self.wnd.add_segment(s)
         self.wnd.drawn_walls = []
         self.wnd.drawn_segments = []
         self.wall = None

@@ -26,6 +26,8 @@ class S:
 
 class Wall:
     def __init__(self, vertices):
+        if len(vertices) < 3:
+            raise Exception("Wall needs at least 3 sides")
         self.vertices = vertices
         self.active = False
 
@@ -35,7 +37,7 @@ class Wall:
     def normal(self):
         v1 = vector_from_to(self.vertices[0],
                             self.vertices[1])
-        for i in range(2, len(self.vertices)-1):
+        for i in range(2, len(self.vertices)):
             v2 = vector_from_to(self.vertices[i-1],
                                 self.vertices[i])
 
