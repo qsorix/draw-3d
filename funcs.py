@@ -20,6 +20,9 @@ class P:
         return "({0}, {1}, {2})".format(self.x, self.y, self.z)
 
     def __eq__(self, other):
+        if not other:
+            return False
+
         return (abs(self.x - other.x) < 0.0001 and
                 abs(self.y - other.y) < 0.0001 and
                 abs(self.z - other.z) < 0.0001)
@@ -208,7 +211,8 @@ def is_point_in_polygon(point, poly):
 
     return inside
 
-def segment_segment_intersection(p1, p2, p3, p4):
+def segment_segment_intersection(s1, s2):
+    p1, p2, p3, p4 = s1.a, s1.b, s2.a, s2.b
     # check if segments p1-p2, and p3-p4 intersect
     # if so, return intersection point
 
@@ -219,7 +223,7 @@ def segment_segment_intersection(p1, p2, p3, p4):
 
     # if all points don't belong to the same plane, segments are skew and cannot
     # intersect
-    if dot(v12, cross(v13, v14)) > 0.0001:
+    if abs(dot(v12, cross(v13, v14))) > 0.0001:
         return None
 
     # if segments are parallel, they don't intersect. cases when endpoints match

@@ -48,7 +48,6 @@ def clockwise_sorted(parent, nodes, plane_normal):
 
         x = funcs.vector_vector_projection(projected, vector_on_the_plane)
         y = funcs.sub_vectors(projected, x)
-        print(projected, x, y)
         # in x and y only one direction is non-zero, but i don't know which, so
         # i sum them up...
         return math.atan2(x.x+x.y+x.z,
@@ -62,12 +61,10 @@ class Backtrack(Exception):
 
 def _dfs_fcp_impl(node, plane_normal, cycle, results):
     for nbr in clockwise_sorted(node, node.neighbors, plane_normal):
-        print ("> ", node, nbr, cycle)
         if nbr == cycle[-2]:
             continue
 
         if nbr == cycle[0]:
-            print ("!", node, nbr, cycle)
             return True
 
         if nbr in cycle:
@@ -83,7 +80,6 @@ def _dfs_fcp_impl(node, plane_normal, cycle, results):
                 continue
 
         cycle.append(nbr)
-        print ("  ", cycle)
         try:
             found = _dfs_fcp_impl(nbr, normal, cycle, results)
             if found:
@@ -156,7 +152,6 @@ class Project:
 
         for w in self.walls:
             walls_points = sorted(w.vertices, key=_totuple)
-            print (walls_points)
             if new_points == walls_points:
                 # such wall exists already
                 return
@@ -173,11 +168,19 @@ class Project:
             self.create_wall_from_cycle(cycle)
 
     def add_segment(self, segment):
-        for s in []:
-            intersection = funcs.segment_segment_intersection(s.a, s.b,
-                                                              segment.a,
-                                                              segment.b)
+        for s in self.segments:
+            intersection = funcs.segment_segment_intersection(s, segment)
             if intersection:
+                print (s, " and ", segment, " intersect at ", intersection)
+
+                if (intersection == s.a or
+                    intersection == s.b or
+                    intersection == segment.a or
+                    intersection == segment.b):
+                    # fixme
+                    continue
+
+                print ("Yes, intesection added")
                 v = self.add_vertex(intersection)
                 v1 = self.get_vertex(s.a)
                 v2 = self.get_vertex(s.b)
