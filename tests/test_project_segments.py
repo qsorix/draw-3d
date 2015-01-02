@@ -85,3 +85,14 @@ def test_removing_segments_remove_disjoint_vertices():
     assert_equals(len(v2.neighbors), 1)
 
     assert_equals(len(proj.vertices), 2)
+
+def test_removing_segments_can_simplify_previously_intersected_segment():
+    p1, p2 = P(-1, 0, 0),  P(1, 0, 0)
+    p3, p4 = P(0,  0, 0),  P(0, 1, 0)
+    proj = project.Project()
+    proj.add_segment(S(p1, p2))
+    proj.add_segment(S(p3, p4))
+
+    proj.del_segment(S(p3, p4))
+    assert_equals(len(proj.segments), 1)
+    assert_equals(len(proj.vertices), 2)

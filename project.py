@@ -239,20 +239,46 @@ class Project:
 
         #self.try_spawning_walls(va, vb_final)
 
+    def _try_simplifying_vertex(self, v):
+        if not v.neighbors:
+            self.vertices.remove(v)
+
+        elif len(v.neighbors) == 2:
+            # if both neighbors for a straight line through this vertex, we can
+            # remove it to simplify the model
+            v1, v2 = list(v.neighbors)
+            a = funcs.vector_from_to(v1.point,
+                                     v.point)
+            b = funcs.vector_from_to(v.point,
+                                     v2.point)
+
+            if funcs.cross(a, b).is_zero():
+                v1.neighbors.remove(v)
+                v2.neighbors.remove(v)
+                self._del_segment_from_list(S(v1.point, v.point))
+                self._del_segment_from_list(S(v.point, v2.point))
+                self.add_segment(S(v1.point, v2.point))
+                self.vertices.remove(v)
+
+    def _del_segment_from_list(self, segment):
+        for s in self.segments:
+            if s.equals_ignoring_direction(segment):
+                self.segments.remove(s)
+                return True
+        return False
+
     def del_segment(self, segment):
-        for se in self.segments:
-            if se.equals_ignoring_direction(segment):
-                va = self.get_vertex(segment.a)
-                vb = self.get_vertex(segment.b)
-                print (va, va.neighbors)
-                print (vb, vb.neighbors)
-                self.segments.remove(se)
-                if vb in va.neighbors:
-                    va.neighbors.remove(vb)
-                if va in vb.neighbors:
-                    vb.neighbors.remove(va)
-                if not va.neighbors:
-                    self.vertices.remove(va)
-                if not vb.neighbors:
-                    self.vertices.remove(vb)
-                break
+        if not self._del_segment_from_list(segment):
+            return
+
+        va = self.get_vertex(segment.a)
+        vb = self.get_vertex(segment.b)
+        print (va, va.neighbors)
+        print (vb, vb.neighbors)
+        if vb in va.neighbors:
+            va.neighbors.remove(vb)
+        if va in vb.neighbors:
+            vb.neighbors.remove(va)
+
+        self._try_simplifying_vertex(va)
+        self._try_simplifying_vertex(vb)
