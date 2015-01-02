@@ -20,6 +20,10 @@ class S:
         yield self.a
         yield self.b
 
+    def equals_ignoring_direction(self, other):
+        return ((self.a == other.a and self.b == other.b) or
+                (self.a == other.b and self.b == other.a))
+
 class Wall:
     def __init__(self, vertices):
         self.vertices = vertices

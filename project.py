@@ -1,4 +1,4 @@
-from objects import Wall
+from objects import S, Wall
 import funcs
 import math
 
@@ -106,7 +106,7 @@ def _dfs_find_cycle_on_plane(va, vb):
 class Vertex:
     def __init__(self, point):
         self.point = point
-        self.neighbors = []
+        self.neighbors = set()
         self.dfs_mark = 0
 
     def __repr__(self):
@@ -119,7 +119,7 @@ class Vertex:
         for n in self.neighbors:
             if n == neighbor:
                 return
-        self.neighbors.append(neighbor)
+        self.neighbors.add(neighbor)
 
 class Project:
     def __init__(self):
@@ -166,35 +166,73 @@ class Project:
         cycles = _dfs_find_cycle_on_plane(va, vb)
         for cycle in cycles:
             self.create_wall_from_cycle(cycle)
+            break
+
+    def split_segment(self, segment, vertex):
+        """split segment by adding a vertex in the middle"""
+        va = self.get_vertex(segment.a)
+        vb = self.get_vertex(segment.b)
+
+        self.add_neighborhood(va, vertex)
+        self.add_neighborhood(vb, vertex)
+        va.neighbors.discard(vb)
+        vb.neighbors.discard(va)
 
     def add_segment(self, segment):
-        for s in self.segments:
-            intersection = funcs.segment_segment_intersection(s, segment)
-            if intersection:
-                print (s, " and ", segment, " intersect at ", intersection)
-
-                if (intersection == s.a or
-                    intersection == s.b or
-                    intersection == segment.a or
-                    intersection == segment.b):
-                    # fixme
-                    continue
-
-                print ("Yes, intesection added")
-                v = self.add_vertex(intersection)
-                v1 = self.get_vertex(s.a)
-                v2 = self.get_vertex(s.b)
-                v3 = self.add_vertex(segment.a)
-                v4 = self.add_vertex(segment.b)
-                self.add_neighborhood(v, v1)
-                self.add_neighborhood(v, v2)
-                self.add_neighborhood(v, v3)
-                self.add_neighborhood(v, v4)
-
-        self.segments.append(segment)
+        print("add segment", segment)
         va = self.add_vertex(segment.a)
         vb = self.add_vertex(segment.b)
-
+        vb_final = vb
         self.add_neighborhood(va, vb)
 
-        self.try_spawning_walls(va, vb)
+        segments_to_remove = []
+        segments_to_add = []
+
+        def add_and_remove():
+            for sr in segments_to_remove:
+                for se in self.segments:
+                    if se.equals_ignoring_direction(sr):
+                        self.segments.remove(se)
+                        break
+            self.segments.extend(segments_to_add)
+
+        for s in self.segments:
+            if s == segment:
+                continue
+
+            intersection = funcs.segment_segment_intersection(s, segment)
+            if intersection:
+                iv = self.add_vertex(intersection)
+                if iv.point != va.point:
+                    vb_final = iv
+                self.add_neighborhood(iv, va)
+                self.add_neighborhood(iv, vb)
+
+                print (s, " and ", segment, " intersect at ", intersection)
+
+                if ((intersection == s.a or
+                     intersection == s.b) and
+                    (intersection == segment.a) or
+                    (intersection == segment.b)):
+                    continue
+
+                if (intersection != s.a and
+                    intersection != s.b):
+                    self.split_segment(s, iv)
+                    segments_to_add.append(S(s.a, intersection))
+                    segments_to_add.append(S(intersection, s.b))
+                    segments_to_remove.append(s)
+
+                if (intersection != segment.a and
+                    intersection != segment.b):
+                    add_and_remove()
+                    self.add_segment(S(segment.a, iv.point))
+                    self.add_segment(S(iv.point, segment.b))
+                    return
+
+        add_and_remove()
+
+        print("appending ", segment)
+        self.segments.append(segment)
+
+        #self.try_spawning_walls(va, vb_final)
