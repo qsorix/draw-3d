@@ -23,17 +23,7 @@ class ToolSelect(Tool):
             self.wnd.plain_rects = [r]
 
     def mouseDown(self, button, pos):
-        if not self.wnd.shift_down():
-            self.wnd.select_nothing()
-
-        objects = self.wnd.get_objects_pointed_at(pos[0], pos[1], "sw")
-        if objects:
-            if self.wnd.shift_down():
-                objects[0][0].active = not objects[0][0].active
-            else:
-                objects[0][0].active = True
-        else:
-            self.rect_start = pos
+        self.rect_start = pos
 
     def mouseUp(self, button, pos):
         if self.rect_start and self.rect_start != pos:
@@ -64,6 +54,16 @@ class ToolSelect(Tool):
                             break
                 if inside:
                     o.active = True
+        else:
+            if not self.wnd.shift_down():
+                self.wnd.select_nothing()
+
+            objects = self.wnd.get_objects_pointed_at(pos[0], pos[1], "sw")
+            if objects:
+                if self.wnd.shift_down():
+                    objects[0][0].active = not objects[0][0].active
+                else:
+                    objects[0][0].active = True
 
         self.rect_start = None
         self.wnd.plain_rects = []
