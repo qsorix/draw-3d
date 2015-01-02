@@ -28,12 +28,25 @@ class ToolPull(Tool):
             points.append(v + a)
         new_walls.append(Wall(points))
 
+        for hole in self.wall.holes:
+            points = []
+            for v in hole:
+                points.append(v + a)
+            new_walls[0].holes.append(points)
+
         s = len(self.wall.vertices)
         for i in range(s):
             new_walls.append(Wall([self.wall.vertices[i],
                                    self.wall.vertices[(i+1) % s],
                                    self.wall.vertices[(i+1) % s]+a,
                                    self.wall.vertices[i]+a]))
+        for hole in self.wall.holes:
+            s = len(hole)
+            for i in range(s):
+                new_walls.append(Wall([hole[i],
+                                       hole[(i+1) % s],
+                                       hole[(i+1) % s]+a,
+                                       hole[i]+a]))
         return new_walls
 
     def _shifted_segments(self, offset):
@@ -46,6 +59,13 @@ class ToolPull(Tool):
                                   self.wall.vertices[i]+a))
             new_segments.append(S(self.wall.vertices[i]+a,
                                   self.wall.vertices[(i+1)%s]+a))
+        for hole in self.wall.holes:
+            s = len(hole)
+            for i in range(s):
+                new_segments.append(S(hole[i],
+                                      hole[i]+a))
+                new_segments.append(S(hole[i]+a,
+                                      hole[(i+1)%s]+a))
         return new_segments
 
     def _pick_wall(self, mouse_pos):
