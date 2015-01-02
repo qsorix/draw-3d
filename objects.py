@@ -29,7 +29,11 @@ class Wall:
         if len(vertices) < 3:
             raise Exception("Wall needs at least 3 sides")
         self.vertices = vertices
+        self.holes = []
         self.active = False
+
+    def add_hole(self, hole):
+        self.holes.append(hole)
 
     def plane(self):
         return funcs.Plane(self.normal(), self.vertices[0])

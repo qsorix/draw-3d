@@ -123,8 +123,8 @@ class Starter(PygameHelper):
         self.text = ""
 
         self.D = 500 # distance eye-screen in pixels
-        self.camera = P(21, 15, 10)
-        self.camera_angle = 0.4
+        self.camera = P(6, 6, -20)
+        self.camera_angle = 0.1
         self.camera_angle_vert = 0
         self.pressed = set()
 
@@ -138,7 +138,14 @@ class Starter(PygameHelper):
         self.walls = self.project.walls #[]
         self.drawn_walls = []
 
-        self.add_segment(S(P(40, 0, 40), P(40, 20, 40), red))
+        self.add_segment(S(P( 0,  0, 0), P(10,  0, 0)))
+        self.add_segment(S(P(10,  0, 0), P(10, 10, 0)))
+        self.add_segment(S(P(10, 10, 0), P( 0, 10, 0)))
+        self.add_segment(S(P( 0, 10, 0), P( 0,  0, 0)))
+
+        self.walls[0].add_hole([P(4, 4, 0), P(4, 6, 0),
+                                P(6, 6, 0), P(6, 4, 0)])
+
         #put_cube(self.segments, self.walls, 40, 0, 40, 20, red)
         # put_cube(self.segments, self.walls, 40, 0, 40, 20, red)
         # put_cube(self.segments, self.walls, -40, 0, 40, 20, green)
@@ -266,11 +273,22 @@ class Starter(PygameHelper):
                 return
             px, py = self._to_zero(p)
             points.append(P(px, py, p.z))
+        holes = []
+        for hole in w.holes:
+            hp = []
+            for v in hole:
+                p = self._project(v)
+                if not p:
+                    return
+                px, py = self._to_zero(p)
+                hp.append(P(px, py, p.z))
+            holes.append(hp)
         try:
             res = Wall(points)
         except:
             return None
         res.active = w.active
+        res.holes = holes
         return res
 
     def _pick_wall_color(self, w):
@@ -279,6 +297,10 @@ class Starter(PygameHelper):
         brightness = abs(funcs.dot(light, n))
 
         c = 130 + 90*brightness
+        if w.active and w.holes:
+            return (c, 150, 250)
+        if w.holes:
+            return (c, 180, 200)
         if w.active:
             return (c, 100, 200)
         return (c, c, c)
@@ -287,15 +309,31 @@ class Starter(PygameHelper):
         if not w:
             return
 
-        color = self._pick_wall_color(w)
-
         points = []
         for v in w.vertices:
             points.append((v.x, v.y))
 
-        pygame.draw.polygon(self.screen,
-                            color,
-                            points)
+        if not w.holes:
+            pygame.draw.polygon(self.screen,
+                                self._pick_wall_color(w),
+                                points)
+        else:
+            holes = pygame.Surface((self.w, self.h))
+            holes.fill((255, 255, 255, 0))
+
+            pygame.draw.polygon(holes,
+                                self._pick_wall_color(w),
+                                points)
+
+            for h in w.holes:
+                points = []
+                for v in h:
+                    points.append((v.x, v.y))
+                pygame.draw.polygon(holes,
+                                    (255, 255, 255, 0),
+                                    points)
+
+            self.screen.blit(holes, (0, 0), None, pygame.BLEND_RGBA_MULT)
 
     def _draw_point(self, p):
         x0, y0 = self._to_zero(p)
@@ -462,7 +500,7 @@ class Starter(PygameHelper):
         for v in self.project.vertices:
             vp = self._project(v.point)
             if vp:
-                vp.radius = len(v.neighbors)
+                vp.radius = int(0.5*len(v.neighbors))
                 to_render.append(vp)
 
         order_by_z(to_render)
@@ -545,11 +583,18 @@ class Starter(PygameHelper):
             for w in self.walls:
                 wp = self._project_wall(w)
                 if wp and funcs.is_point_in_polygon(P(mx, my, 0), wp.vertices):
-                    p = funcs.ray_plane_intersection(view_ray, w.plane())
-                    if p: # sometimes there's no p for some strange reasons. i
-                          # think the wall may be broken and i get wrong plane
-                          # from it
-                        result.append((w, p))
+                    hit_hole = False
+                    for hole in wp.holes:
+                        if funcs.is_point_in_polygon(P(mx, my, 0), hole):
+                            hit_hole = True
+                            break
+
+                    if not hit_hole:
+                        p = funcs.ray_plane_intersection(view_ray, w.plane())
+                        if p: # sometimes there's no p for some strange reasons. i
+                              # think the wall may be broken and i get wrong plane
+                              # from it
+                            result.append((w, p))
 
         order_by_camera_distance_and_type(self.camera, result)
 
