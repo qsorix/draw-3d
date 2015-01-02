@@ -26,6 +26,16 @@ def test_adding_intersecting_segments_creates_vertices():
         print (v)
         assert_equals(len(v.neighbors), 1)
 
+def test_adding_segment_with_intersection_at_the_end():
+    p1, p2 = P(0, 0, 0), P(2, 0, 0)
+    p3, p4 = P(1, 1, 0), P(1, 0, 0)
+    proj = project.Project()
+    proj.add_segment(S(p1, p2))
+    proj.add_segment(S(p3, p4))
+
+    assert_equals(len(proj.vertices), 4)
+    assert_equals(len(proj.segments), 3)
+
 def test_adding_intersecting_segments_creates_vertices_with_proper_neighborhood():
     p1 = P(0, 0, 0)
     p2 = P(3, 0, 0)

@@ -205,12 +205,16 @@ class Project:
                 if iv.point != va.point:
                     vb_final = iv
 
-                print (s, " and ", segment, " intersect at ", intersection)
+                #print (s, " and ", segment, " intersect at ", intersection)
+                #print ("s.a: ", s.a)
+                #print ("s.b: ", s.b)
+                #print ("seg.a: ", segment.a)
+                #print ("seg.b: ", segment.b)
 
                 if ((intersection == s.a or
                      intersection == s.b) and
-                    (intersection == segment.a) or
-                    (intersection == segment.b)):
+                    (intersection == segment.a or
+                     intersection == segment.b)):
                     continue
 
                 if (intersection != s.a and
