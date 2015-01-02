@@ -156,7 +156,9 @@ class Starter(PygameHelper):
         self.text = text
 
     def _delete_active_segments(self):
-        self.segments[:] = [s for s in self.segments if not s.active]
+        for s in self.project.segments.copy():
+            if s.active:
+                self.project.del_segment(s)
         self.walls[:] = [w for w in self.walls if not w.active]
 
     def _set_tool(self, tool):

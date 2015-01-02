@@ -168,7 +168,7 @@ class Project:
             self.create_wall_from_cycle(cycle)
             break
 
-    def split_segment(self, segment, vertex):
+    def _split_segment(self, segment, vertex):
         """split segment by adding a vertex in the middle"""
         va = self.get_vertex(segment.a)
         vb = self.get_vertex(segment.b)
@@ -183,7 +183,6 @@ class Project:
         va = self.add_vertex(segment.a)
         vb = self.add_vertex(segment.b)
         vb_final = vb
-        self.add_neighborhood(va, vb)
 
         segments_to_remove = []
         segments_to_add = []
@@ -218,7 +217,7 @@ class Project:
 
                 if (intersection != s.a and
                     intersection != s.b):
-                    self.split_segment(s, iv)
+                    self._split_segment(s, iv)
                     segments_to_add.append(S(s.a, intersection))
                     segments_to_add.append(S(intersection, s.b))
                     segments_to_remove.append(s)
@@ -234,5 +233,22 @@ class Project:
 
         print("appending ", segment)
         self.segments.append(segment)
+        self.add_neighborhood(va, vb)
 
-        #self.try_spawning_walls(va, vb_final)
+        self.try_spawning_walls(va, vb_final)
+
+    def del_segment(self, segment):
+        for se in self.segments:
+            if se.equals_ignoring_direction(segment):
+                va = self.get_vertex(segment.a)
+                vb = self.get_vertex(segment.b)
+                print (va, va.neighbors)
+                print (vb, vb.neighbors)
+                self.segments.remove(se)
+                va.neighbors.remove(vb)
+                vb.neighbors.remove(va)
+                if not va.neighbors:
+                    self.vertices.remove(va)
+                if not vb.neighbors:
+                    self.vertices.remove(vb)
+                break
