@@ -204,8 +204,6 @@ class Project:
                 iv = self.add_vertex(intersection)
                 if iv.point != va.point:
                     vb_final = iv
-                self.add_neighborhood(iv, va)
-                self.add_neighborhood(iv, vb)
 
                 print (s, " and ", segment, " intersect at ", intersection)
 
@@ -235,7 +233,7 @@ class Project:
         self.segments.append(segment)
         self.add_neighborhood(va, vb)
 
-        self.try_spawning_walls(va, vb_final)
+        #self.try_spawning_walls(va, vb_final)
 
     def del_segment(self, segment):
         for se in self.segments:
@@ -245,8 +243,10 @@ class Project:
                 print (va, va.neighbors)
                 print (vb, vb.neighbors)
                 self.segments.remove(se)
-                va.neighbors.remove(vb)
-                vb.neighbors.remove(va)
+                if vb in va.neighbors:
+                    va.neighbors.remove(vb)
+                if va in vb.neighbors:
+                    vb.neighbors.remove(va)
                 if not va.neighbors:
                     self.vertices.remove(va)
                 if not vb.neighbors:

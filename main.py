@@ -296,7 +296,12 @@ class Starter(PygameHelper):
 
     def _draw_point(self, p):
         x0, y0 = self._to_zero(p)
-        pygame.draw.circle(self.screen, cyan, (x0, y0), 2)
+        r = 2
+        try:
+            r = p.radius + 2
+        except:
+            pass
+        pygame.draw.circle(self.screen, cyan, (x0, y0), r)
 
     def _to_zero(self, p):
         x, y = p.x, p.y;
@@ -507,9 +512,10 @@ class Starter(PygameHelper):
                 to_render.append(w)
 
         for v in self.project.vertices:
-            v = self._project(v.point)
-            if v:
-                to_render.append(v)
+            vp = self._project(v.point)
+            if vp:
+                vp.radius = len(v.neighbors)
+                to_render.append(vp)
 
         order_by_z(to_render)
 
