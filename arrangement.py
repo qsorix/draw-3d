@@ -299,7 +299,7 @@ class Arrangement:
         he2_next_face = v2.get_next_this_hedge_would_get(he2).face
 
         if he1_next_face and he1_next_face == he2_next_face:
-            print("removing face")
+            print("removing face", he1_next_face)
             self._remove_face(he1_next_face)
 
         self._span_hedges_between(v1, v2, he1, he2)
@@ -330,6 +330,12 @@ class Arrangement:
                 print("    but it is cw or it has a face already")
 
     def _remove_face(self, face):
+        # TODO: i don't know if this is needed here,
+        # or it is a bug that we get it as an argument
+        # anyway... don't remove the fake outer_face
+        if face == self.outer_face:
+            return
+
         self.faces.remove(face)
         for e in face.hedge.cycle_hedges():
             e.face = None
