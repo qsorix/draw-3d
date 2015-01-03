@@ -129,12 +129,25 @@ class Face:
         # TODO: this projection method is super stupid :)
         # TODO: handle holes once we get them
         proj_point = P(point.x, point.y, 0)
+
         proj_boundary = []
         for p in self.hedge.cycle_vertices():
             proj_boundary.append(P(p.point.x, p.point.y, 0))
 
         res = funcs.is_point_in_polygon(proj_point, proj_boundary)
-        return res
+        if not res:
+            return False
+
+        # point still may be inside of a hole
+        for hole in self.inner_ccbs:
+            proj_boundary = []
+            for p in self.hedge.cycle_vertices():
+                proj_boundary.append(P(p.point.x, p.point.y, 0))
+            res = funcs.is_point_in_polygon(proj_point, proj_boundary)
+            if res:
+                return False
+
+        return True
 
     __repr__ = __str__
 
