@@ -118,6 +118,9 @@ class ToolPull(Tool):
         self.length = funcs.point_to_plane_distance(target_plane,
                                                     self.wall.vertices[0])
 
+        self.length = round(self.length)
+        self.wnd.set_text("{0:.2f} cm".format(self.length))
+
         if abs(self.length) > 0.0001:
             print ("faking walls at", self.length)
             self.wnd.drawn_walls = self._shifted_walls(self.length)
