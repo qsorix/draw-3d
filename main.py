@@ -399,6 +399,7 @@ class Starter(PygameHelper):
 
     def keyDown(self, key):
         self.pressed.add(key)
+        self.tool.keyDown(key)
 
     def keyUp(self, key):
         self.pressed.discard(key)

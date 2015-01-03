@@ -95,6 +95,18 @@ def point_lies_on_segment(seg, p):
     close = abs(length(v1)+length(v2) - length(vector_from_to(seg.a, seg.b))) < 0.0001
     return parallel and close
 
+def point_lies_on_plane(p, plane):
+    if p == plane.p0:
+        return True
+
+    v = vector_from_to(plane.p0, p)
+    d = dot(v, plane.normal)
+    return abs(d) < 0.0001
+
+def segment_lies_on_plane(seg, plane):
+    return (point_lies_on_plane(seg.a, plane) and
+            point_lies_on_plane(seg.b, plane))
+
 def unit(v):
     l = length(v)
     if l == 0:
@@ -317,3 +329,15 @@ def get_axes_oriented_projection(plane, v):
         return vy
     else:
         return vz
+
+def rotates_clockwise(v1, v2, plane):
+    c = unit(cross(v1, v2))
+    n = unit(plane.normal)
+
+    result = c != n
+
+    if result:
+        print("clockwise from {} to {}".format(v1, v2))
+    else:
+        print("anti-clockwise from {} to {}".format(v1, v2))
+    return result

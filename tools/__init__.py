@@ -3,6 +3,9 @@ class Tool:
         self.wnd = wnd
         self.reset()
 
+    def keyDown(self, key):
+        pass
+
     def mouseDown(self, button, pos):
         pass
 
