@@ -4,8 +4,14 @@ class Vertex:
     def __init__(self, arrangement, point):
         self.arrangement = arrangement
 
-        self.hedge = None # this edge comes into this point
+        self.hedge = None # this hedge comes into this point
         self.point = point
+
+    def __str__(self):
+        return "Vx({},{},{})".format(self.point.x,
+                                     self.point.y,
+                                     self.point.z)
+    __repr__  = __str__
 
     def add_incident_hedge(self, he):
         assert he.target() == self
@@ -72,7 +78,7 @@ class Vertex:
 
 class Face:
     def __init__(self):
-        self.edge = None
+        self.hedge = None
 
 class HE:
     def __init__(self):
@@ -87,6 +93,19 @@ class HE:
 
     def source(self):
         return self.twin.vertex
+
+    def cycle_hedges(self):
+        start = self
+        current = start
+        while True:
+            yield current
+            current = current.next
+            if current == start:
+                break
+
+    def cycle_vertices(self):
+        for hedge in self.cycle_hedges():
+            yield hedge.vertex
 
 def make_halfedge_twins(v1, v2):
     he1 = HE()
@@ -128,12 +147,12 @@ class Arrangement:
         v1 = self.add_vertex(s.a)
         v2 = self.add_vertex(s.b)
 
-        if self._has_edges_between(v1, v2):
+        if self._has_hedges_between(v1, v2):
             return
 
         self._span_hedges_between(v1, v2)
 
-    def _has_edges_between(self, v1, v2):
+    def _has_hedges_between(self, v1, v2):
         return v1.has_in_immediate_neighborhood(v2)
 
     def _span_hedges_between(self, v1, v2):

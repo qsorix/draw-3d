@@ -31,3 +31,26 @@ def test_incident_edges_rotate_clockwise():
     assert_equals(v0.point, p0)
 
     assert_equals(list(v0.cw_neighbors()), [v1, v2, v3, v4])
+
+def test_face_is_formed_from_a_cycle_of_edges():
+    p0 = P(0, 0, 0)
+    p1 = P(1, 0, 0)
+    p2 = P(0, 1, 0)
+
+    plane = Plane(V(0, 0, 1), p0)
+    a = Arrangement(plane)
+
+    a.add_segment(S(p0, p1))
+    a.add_segment(S(p1, p2))
+    a.add_segment(S(p2, p0))
+
+    v0 = a.get_vertex(p0)
+    v1 = a.get_vertex(p1)
+    v2 = a.get_vertex(p2)
+
+    assert_equals(v0.degree(), 2)
+    assert_equals(v1.degree(), 2)
+    assert_equals(v2.degree(), 2)
+
+    assert_equals(list(v0.hedge.cycle_vertices()),
+                  [v0, v2, v1])
