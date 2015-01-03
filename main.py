@@ -143,9 +143,6 @@ class Starter(PygameHelper):
         self.add_segment(S(P(10, 10, 0), P( 0, 10, 0)))
         self.add_segment(S(P( 0, 10, 0), P( 0,  0, 0)))
 
-        self.walls[0].add_hole([P(4, 4, 0), P(4, 6, 0),
-                                P(6, 6, 0), P(6, 4, 0)])
-
         #put_cube(self.segments, self.walls, 40, 0, 40, 20, red)
         # put_cube(self.segments, self.walls, 40, 0, 40, 20, red)
         # put_cube(self.segments, self.walls, -40, 0, 40, 20, green)

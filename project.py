@@ -2,112 +2,52 @@ from objects import S, Wall
 import funcs
 import math
 
-def _totuple(p):
-    return (p.x, p.y, p.z)
+from arrangement import Arrangement
 
-def _vertexes_are_on_the_same_plane(v1, v2, v3, plane_normal):
-    """Check 3 points agains a given plane. Since it is used in DFS, we only
-    care about true negatives. Initially some inputs are None and this is
-    normal, DFS should continue so it returns True."""
+def arrangement_on_a_wall(proj):
+    wall = None
+    for w in proj.walls:
+        if w.active:
+            wall = w
+            break
+    if not wall:
+        return
 
-    if not v1 or not v2 or not v3:
-        return True, plane_normal
+    plane = wall.plane()
 
-    vector1 = funcs.vector_from_to(v1.point, v2.point)
-    vector2 = funcs.vector_from_to(v2.point, v3.point)
+    arr = Arrangement(plane)
 
-    normal = funcs.unit(funcs.cross(vector1, vector2))
-    if normal.is_zero():
-        # points lie on the same line, so they do belong to a single plane, so
-        # let's continue
-        return True, plane_normal
+    for s in proj.segments:
+        if funcs.segment_lies_on_plane(s, plane):
+            s.active = True
+            arr.add_segment(s)
+        else:
+            s.active = False
 
-    if not plane_normal:
-        return True, normal
+    wall.active = False
+    print ("Found faces: ", arr.faces)
 
-    #print ("Plane_normal: ", plane_normal)
-    #print ("Normal:       ", normal)
+    proj.walls[:] = []
+    for f in arr.faces:
+        points = []
+        for v in f.hedge.cycle_vertices():
+            points.append(v.point)
 
-    nc = funcs.cross(plane_normal, normal)
-    return nc.is_zero(), plane_normal
+        w = Wall(points)
 
-def clockwise_sorted(parent, nodes, plane_normal):
-    if len(nodes) <= 1:
-        return nodes
+        for hole in f.inner_ccbs:
+            points = []
+            for v in hole.cycle_vertices():
+                points.append(v.point)
+            if len(points) > 2:
+                w.add_hole(points)
 
-    plane_normal = funcs.Vector(1.12, 2.23, 3.34)
-
-    vector_on_the_plane = funcs.Vector(plane_normal.z,
-                                       plane_normal.x,
-                                       plane_normal.y)
-
-    def nodes_angle(node):
-        projected = funcs.vector_plane_projection(
-            funcs.vector_from_to(parent.point, node.point),
-            funcs.Plane(plane_normal, parent))
-
-        x = funcs.vector_vector_projection(projected, vector_on_the_plane)
-        y = funcs.sub_vectors(projected, x)
-        # in x and y only one direction is non-zero, but i don't know which, so
-        # i sum them up...
-        return math.atan2(x.x+x.y+x.z,
-                          y.x+y.y+y.z)
-
-    return sorted(nodes, key=nodes_angle)
-
-class Backtrack(Exception):
-    def __init__(self, node):
-        self.node = node
-
-def _dfs_fcp_impl(node, plane_normal, cycle, results):
-    for nbr in clockwise_sorted(node, node.neighbors, plane_normal):
-        if nbr == cycle[-2]:
-            continue
-
-        if nbr == cycle[0]:
-            return True
-
-        if nbr in cycle:
-            raise Backtrack(nbr)
-
-        normal = None
-        if len(cycle) >= 2:
-            same_plane, normal = _vertexes_are_on_the_same_plane(cycle[-2],
-                                                                 cycle[-1], nbr,
-                                                                 plane_normal)
-
-            if not same_plane:
-                continue
-
-        cycle.append(nbr)
-        try:
-            found = _dfs_fcp_impl(nbr, normal, cycle, results)
-            if found:
-                results.append(cycle.copy())
-                if plane_normal:
-                    return True
-        except Backtrack as btr:
-            if btr.node != nbr:
-                cycle.pop()
-                raise
-        cycle.pop()
-
-    return False
-
-def _dfs_find_cycle_on_plane(va, vb):
-    cycle = [va, vb]
-    results = []
-    try:
-        _dfs_fcp_impl(vb, None, cycle, results)
-    except Backtrack:
-        pass
-    return results
+        proj.walls.append(w)
 
 class Vertex:
     def __init__(self, point):
         self.point = point
         self.neighbors = set()
-        self.dfs_mark = 0
 
     def __repr__(self):
         return "Vertex{}".format(self.point)
@@ -143,30 +83,8 @@ class Project:
         v1.add_neighbor(v2)
         v2.add_neighbor(v1)
 
-    def create_wall_from_cycle(self, cycle):
-        points = []
-        for v in cycle:
-            points.append(v.point)
-
-        new_points = sorted(points, key=_totuple)
-
-        for w in self.walls:
-            walls_points = sorted(w.vertices, key=_totuple)
-            if new_points == walls_points:
-                # such wall exists already
-                return
-
-        print ("Adding a wall on ", points)
-        self.walls.append(Wall(points))
-
     def try_spawning_walls(self, va, vb):
-        for v in self.vertices:
-            v.dfs_mark = 0
-
-        cycles = _dfs_find_cycle_on_plane(va, vb)
-        for cycle in cycles:
-            self.create_wall_from_cycle(cycle)
-            break
+        pass
 
     def _split_segment(self, segment, vertex):
         """split segment by adding a vertex in the middle"""
