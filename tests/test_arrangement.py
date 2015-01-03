@@ -1,5 +1,5 @@
 from nose.tools import assert_equals
-from arrangement import Arrangement
+from arrangement import Arrangement, dump_all
 import funcs 
 from funcs import Vector as V
 from funcs import P
@@ -428,3 +428,27 @@ def test_holes_can_be_surrounded_by_bigger_holes_3():
                   len(a.faces[1].inner_ccbs) +
                   len(a.faces[2].inner_ccbs),
                   2)
+
+def test_floating_edges_dont_break_faces():
+    p0 = P( 0,  0, 0)
+    p1 = P( 5,  0, 0)
+    p2 = P(10,  0, 0)
+    p3 = P(10, 10, 0)
+    p4 = P( 0, 10, 0)
+
+    p5 = P( 5, 5, 0)
+
+    plane = Plane(V(0, 0, 1), p0)
+    a = Arrangement(plane)
+
+    a.add_segment(S(p0, p1))
+    a.add_segment(S(p1, p2))
+    a.add_segment(S(p2, p3))
+    a.add_segment(S(p3, p4))
+    a.add_segment(S(p4, p0))
+
+    a.add_segment(S(p1, p5))
+
+    #dump_all(a)
+
+    assert_equals(len(a.faces), 1)

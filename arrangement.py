@@ -186,6 +186,7 @@ class HE:
             yield hedge.vertex
 
     def is_on_proper_cycle(self):
+        # FIXME: this method is either wrong or useless or both
 
         for he in self.cycle_hedges():
             if he != self.twin:
@@ -213,6 +214,9 @@ def make_halfedge_twins(arrangement, v1, v2):
     he1 = HE(arrangement)
     he2 = HE(arrangement)
 
+    arrangement.hedges.append(he1)
+    arrangement.hedges.append(he2)
+
     he1.vertex = v1
     he1.twin = he2
     he1.next = he2
@@ -230,6 +234,7 @@ class Arrangement:
         self.plane = plane
         self.vertices = []
         self.faces = []
+        self.hedges = [] # these are here for dbug only
 
         self.outer_face = Face(self)
 
@@ -302,13 +307,27 @@ class Arrangement:
         if isolated_on_face:
             isolated_on_face.add_inner_ccb(he1)
 
+        if v1_isolated or v2_isolated:
+            # no way a previously isolated edge can now span a wall
+            return
+
+        print("Now try adding faces")
+
         if he1.is_on_proper_cycle():
+            print("  he1 is on proper cycle")
             if not he1.is_on_clockwise_cycle():
+                print("    and thats anti-cw, creating face")
                 self._create_new_face_inside(he1)
+            else:
+                print("    but it is cw")
 
         if he2.is_on_proper_cycle():
+            print("  he2 is on proper cycle")
             if not he2.is_on_clockwise_cycle() and not he2.face:
+                print("    and thats anti-cw, creating face, and he2 has no face yet")
                 self._create_new_face_inside(he2)
+            else:
+                print("    but it is cw or it has a face already")
 
     def _remove_face(self, face):
         self.faces.remove(face)
@@ -368,3 +387,40 @@ class Arrangement:
     def _span_hedges_between(self, v1, v2, he1, he2):
         v1.add_incident_hedge(he1)
         v2.add_incident_hedge(he2)
+
+def dump_all(arr):
+    print("Arrangement")
+    print("------------")
+    print("No of vertices:   {}".format(len(arr.vertices)))
+    print("No of half-edges: {}".format(len(arr.hedges)))
+    print("No of faces:      {}".format(len(arr.faces)))
+    print("")
+    print("Vertices:")
+    for v in arr.vertices:
+        print("  ", v)
+    print("")
+    print("Faces:")
+    for f in arr.faces:
+        cw = "clockwise"
+        if not f.hedge.is_on_clockwise_cycle():
+            cw = "anti-clockwise"
+        print("  ", f, "oriented", cw)
+    print("")
+    print("Outside boundary:")
+    for ccb in arr.outer_face.inner_ccbs:
+        print("  ", list(ccb.cycle_vertices()))
+    print("")
+    print("Edges:")
+    for h in arr.hedges:
+        print(" ", h)
+        #print("    twin: ", h.twin)
+        print("    next: ", h.next)
+        print("    prev: ", h.prev)
+    print("")
+    print("------------")
+    print("Vertices (detailed):")
+    for v in arr.vertices:
+        print("  ", v)
+        for he in v.cw_incident_hedges():
+            print("    ", he)
+    print("")
