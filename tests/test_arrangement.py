@@ -136,3 +136,63 @@ def test_face_is_split_when_edge_crosses_existing_face():
     a.add_segment(S(p1, p3))
 
     assert_equals(len(a.faces), 2)
+
+def test_face_can_have_isolated_vertices():
+    p0 = P( 0,  0, 0)
+    p1 = P(10,  0, 0)
+    p2 = P(10, 10, 0)
+    p3 = P( 0, 10, 0)
+
+    plane = Plane(V(0, 0, 1), p0)
+    a = Arrangement(plane)
+
+    a.add_segment(S(p0, p1))
+    a.add_segment(S(p1, p2))
+    a.add_segment(S(p2, p3))
+    a.add_segment(S(p3, p0))
+
+    assert_equals(len(a.faces), 1)
+
+    p5 = P( 2, 2, 0)
+
+    a.add_vertex(p5)
+
+    assert_equals(len(a.faces[0].isolated_vertices), 1)
+
+    v5 = a.get_vertex(p5)
+
+    assert_equals(v5.outer_face, a.faces[0])
+
+def test_isolated_vertices_turn_into_holes_when_edges_are_added():
+    p0 = P( 0,  0, 0)
+    p1 = P(10,  0, 0)
+    p2 = P(10, 10, 0)
+    p3 = P( 0, 10, 0)
+
+    plane = Plane(V(0, 0, 1), p0)
+    a = Arrangement(plane)
+
+    a.add_segment(S(p0, p1))
+    a.add_segment(S(p1, p2))
+    a.add_segment(S(p2, p3))
+    a.add_segment(S(p3, p0))
+
+    assert_equals(len(a.faces), 1)
+
+    p5 = P( 2, 2, 0)
+    p6 = P( 2, 6, 0)
+
+    a.add_vertex(p5)
+    a.add_vertex(p6)
+
+    assert_equals(len(a.faces[0].isolated_vertices), 2)
+
+    a.add_segment(S(p5, p6))
+    v5 = a.get_vertex(p5)
+    v6 = a.get_vertex(p6)
+
+    assert_equals(len(a.faces[0].isolated_vertices), 0)
+    assert_equals(v5.outer_face, None)
+    assert_equals(v6.outer_face, None)
+
+    assert_equals(len(a.faces[0].inner_ccbs), 1)

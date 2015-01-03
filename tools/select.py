@@ -34,7 +34,17 @@ def arrangement_on_a_wall(proj):
         points = []
         for v in f.hedge.cycle_vertices():
             points.append(v.point)
-        proj.walls.append(Wall(points))
+
+        w = Wall(points)
+
+        for hole in f.inner_ccbs:
+            points = []
+            for v in hole.cycle_vertices():
+                points.append(v.point)
+            if len(points) > 2:
+                w.add_hole(points)
+
+        proj.walls.append(w)
 
 
 class ToolSelect(Tool):

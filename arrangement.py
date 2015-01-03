@@ -1,10 +1,12 @@
 import funcs
+from funcs import P
 
 class Vertex:
     def __init__(self, arrangement, point):
         self.arrangement = arrangement
 
         self.hedge = None # this hedge comes into this point
+        self.outer_face = None # this is set for isolated vertices
         self.point = point
 
     def __str__(self):
@@ -12,6 +14,9 @@ class Vertex:
                                      self.point.y,
                                      self.point.z)
     __repr__  = __str__
+
+    def is_isolated(self):
+        return self.outer_face is not None
 
     def get_next_this_hedge_would_get(self, he):
         if not self.hedge:
@@ -90,13 +95,40 @@ class Vertex:
 class Face:
     def __init__(self, arrangement):
         self.arrangement = arrangement
-        self.hedge = None
+        self.hedge = None # this lies on the outer_ccb
+        self.isolated_vertices = []
+        self.inner_ccbs = []
 
     def __str__(self):
         if self.hedge:
-            return "<Face {}>".format(list(self.hedge.cycle_vertices()))
+            if self.inner_ccbs:
+                return "<Face {} with holes>".format(list(self.hedge.cycle_vertices()))
+            else:
+                return "<Face {}>".format(list(self.hedge.cycle_vertices()))
         else:
             return "<Face ?>"
+
+    def add_isolated_vertex(self, v):
+        self.isolated_vertices.append(v)
+
+    def remove_isolated_vertex(self, v):
+        self.isolated_vertices.remove(v)
+
+    def add_inner_ccb(self, he):
+        self.inner_ccbs.append(he)
+
+    def contains_point(self, point):
+        if not self.hedge:
+            return False
+
+        # TODO: this projection method is super stupid :)
+        # TODO: handle holes once we get them
+        proj_point = P(point.x, point.y, 0)
+        proj_boundary = []
+        for p in self.hedge.cycle_vertices():
+            proj_boundary.append(P(p.point.x, p.point.y, 0))
+
+        return funcs.is_point_in_polygon(proj_point, proj_boundary)
 
     __repr__ = __str__
 
@@ -185,7 +217,12 @@ class Arrangement:
             return v
         v = Vertex(self, point)
         self.vertices.append(v)
-        # TODO: set face? or add this point to a face?
+
+        for face in self.faces:
+            if face.contains_point(point):
+                v.outer_face = face
+                face.add_isolated_vertex(v)
+
         return v
 
     def get_vertex(self, point):
@@ -201,6 +238,23 @@ class Arrangement:
         if self._has_hedges_between(v1, v2):
             return
 
+        v1_isolated = v1.is_isolated()
+        v2_isolated = v2.is_isolated()
+        isolated_on_face = None
+
+        if v1_isolated or v2_isolated:
+            if v1_isolated and v2_isolated:
+                assert v1.outer_face == v2.outer_face
+                isolated_on_face = v1.outer_face
+
+            if v1_isolated:
+                v1.outer_face.remove_isolated_vertex(v1)
+                v1.outer_face = None
+
+            if v2_isolated:
+                v2.outer_face.remove_isolated_vertex(v2)
+                v2.outer_face = None
+
         he1, he2 = make_halfedge_twins(self, v1, v2)
 
         # set these two before adding the edges
@@ -215,9 +269,13 @@ class Arrangement:
 
         self._span_hedges_between(v1, v2, he1, he2)
 
+        if isolated_on_face:
+            isolated_on_face.add_inner_ccb(he1)
+
         if he1.is_on_proper_cycle():
             if not he1.is_on_clockwise_cycle():
                 self._create_new_face_inside(he1)
+
         if he2.is_on_proper_cycle():
             if not he2.is_on_clockwise_cycle():
                 self._create_new_face_inside(he2)
