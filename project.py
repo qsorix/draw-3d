@@ -4,30 +4,17 @@ import math
 
 from arrangement import Arrangement
 
-def arrangement_on_a_wall(proj):
-    wall = None
-    for w in proj.walls:
-        if w.active:
-            wall = w
-            break
-    if not wall:
-        return
-
-    plane = wall.plane()
+def arrangement_on_a_wall(proj, plane):
 
     arr = Arrangement(plane)
 
     for s in proj.segments:
         if funcs.segment_lies_on_plane(s, plane):
-            s.active = True
             arr.add_segment(s)
-        else:
-            s.active = False
 
-    wall.active = False
     print ("Found faces: ", arr.faces)
 
-    proj.walls[:] = []
+    result = []
     for f in arr.faces:
         points = []
         for v in f.hedge.cycle_vertices():
@@ -42,7 +29,9 @@ def arrangement_on_a_wall(proj):
             if len(points) > 2:
                 w.add_hole(points)
 
-        proj.walls.append(w)
+        result.append(w)
+
+    return result
 
 class Vertex:
     def __init__(self, point):
@@ -84,7 +73,34 @@ class Project:
         v2.add_neighbor(v1)
 
     def try_spawning_walls(self, va, vb):
-        pass
+        planes = []
+        v1 = funcs.vector_from_to(va.point, vb.point)
+        for n in va.neighbors:
+            v2 = funcs.vector_from_to(va.point, n.point)
+            c = funcs.unit(funcs.cross(v1, v2))
+            if not c.is_zero():
+                found = False
+                for p in planes:
+                    if p.normal == c or p.normal == funcs.reverse(c):
+                        found = True
+                if not found:
+                    planes.append(funcs.Plane(c, va.point))
+
+        for p in planes:
+            walls = arrangement_on_a_wall(self, p)
+
+            for new_wall in walls:
+                srtd1 = sorted(new_wall.vertices, key=lambda p: (p.x, p.y, p.z))
+                found = False
+                for w in self.walls:
+                    srtd2 = sorted(w.vertices, key=lambda p: (p.x, p.y, p.z))
+                    if srtd1 == srtd2:
+                        found = True
+                        break
+                if found:
+                    continue
+                else:
+                    self.walls.append(new_wall)
 
     def _split_segment(self, segment, vertex):
         """split segment by adding a vertex in the middle"""

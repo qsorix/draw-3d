@@ -61,6 +61,8 @@ class Vector:
                 abs(self.y) < 0.0001 and
                 abs(self.z) < 0.0001)
 
+def reverse(v):
+    return Vector(-v.x, -v.y, -v.z)
 
 def add_vectors(u, v):
     return Vector(u.x+v.x, u.y+v.y, u.z+v.z)

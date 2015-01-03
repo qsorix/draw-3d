@@ -112,14 +112,13 @@ def test_created_walls_are_not_overlapping_other_surfaces():
     proj.add_segment(S(P(2, 0, 0), P(2, 1, 0)))
     proj.add_segment(S(P(1, 1, 0), P(2, 1, 0)))
     assert_equals(len(proj.walls), 1)
-    proj.walls[:] = []
 
     proj.add_segment(S(P(0, 0, 0), P(0, 2, 0)))
     proj.add_segment(S(P(2, 1, 0), P(2, 2, 0)))
     proj.add_segment(S(P(0, 2, 0), P(2, 2, 0)))
 
-    assert_equals(len(proj.walls), 1)
-    w = proj.walls[0]
+    assert_equals(len(proj.walls), 2)
+    w = proj.walls[1]
     assert_equals(len(w.vertices), 6)
     print("Nghs of 0,2: ", proj.get_vertex(P(0,2,0)).neighbors)
     assert P(1, 1, 0) in w.vertices
