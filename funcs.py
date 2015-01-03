@@ -330,7 +330,7 @@ def get_axes_oriented_projection(plane, v):
     else:
         return vz
 
-def rotates_clockwise(v1, v2, plane):
+def rotates_clockwise_2(v1, v2, plane):
     c = unit(cross(v1, v2))
     n = unit(plane.normal)
 
@@ -341,3 +341,16 @@ def rotates_clockwise(v1, v2, plane):
     else:
         print("anti-clockwise from {} to {}".format(v1, v2))
     return result
+
+def rotates_clockwise_3(v1, v2, v3, plane):
+    c12 = rotates_clockwise_2(v1, v2, plane)
+    c23 = rotates_clockwise_2(v2, v3, plane)
+    c31 = rotates_clockwise_2(v3, v1, plane)
+
+    if c12 and c23:
+        return True
+
+    if c12 and c31:
+        return True
+
+    return False

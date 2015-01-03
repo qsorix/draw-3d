@@ -67,10 +67,8 @@ class Vertex:
             cpoint_v = funcs.vector_from_to(self.point, current.source().point)
             npoint_v = funcs.vector_from_to(self.point, next.source().point)
 
-            if (funcs.rotates_clockwise(cpoint_v, point_v,
-                                        self.arrangement.plane) and
-                funcs.rotates_clockwise(point_v, npoint_v,
-                                        self.arrangement.plane)):
+            if funcs.rotates_clockwise_3(cpoint_v, point_v, npoint_v,
+                                         self.arrangement.plane):
                 return current, current.next
 
         raise Exception("CW insertion point not found for "\
