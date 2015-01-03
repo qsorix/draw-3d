@@ -1,9 +1,10 @@
 from tools import Tool
 import pygame
 from colors import *
-from objects import S
+from objects import S, Wall
 import funcs
 from funcs import P
+from arrangement import Arrangement
 
 def arrangement_on_a_wall(proj):
     wall = None
@@ -16,13 +17,24 @@ def arrangement_on_a_wall(proj):
 
     plane = wall.plane()
 
+    arr = Arrangement(plane)
+
     for s in proj.segments:
         if funcs.segment_lies_on_plane(s, plane):
             s.active = True
+            arr.add_segment(s)
         else:
             s.active = False
 
     wall.active = False
+    print ("Found faces: ", arr.faces)
+
+    proj.walls[:] = []
+    for f in arr.faces:
+        points = []
+        for v in f.hedge.cycle_vertices():
+            points.append(v.point)
+        proj.walls.append(Wall(points))
 
 
 class ToolSelect(Tool):

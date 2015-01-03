@@ -350,7 +350,10 @@ def rotates_clockwise_3(v1, v2, v3, plane):
     if c12 and c23:
         return True
 
-    if c12 and c31:
+    if c31 and c12:
+        return True
+
+    if c23 and c31:
         return True
 
     return False

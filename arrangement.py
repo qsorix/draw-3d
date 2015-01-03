@@ -75,16 +75,32 @@ class Vertex:
                         "{}".format(point))
 
 class Face:
-    def __init__(self):
+    def __init__(self, arrangement):
+        self.arrangement = arrangement
         self.hedge = None
 
+    def __str__(self):
+        if self.hedge:
+            return "<Face {}>".format(list(self.hedge.cycle_vertices()))
+        else:
+            return "<Face ?>"
+
+    __repr__ = __str__
+
 class HE:
-    def __init__(self):
+    def __init__(self, arrangement):
+        self.arrangement = arrangement
+
         self.face = None
         self.vertex = None
         self.prev = None
         self.next = None
         self.twin = None
+
+    def __str__(self):
+        return ("<HE {} to {}>".format(self.source().point,
+                                       self.target().point))
+    __repr__ = __str__
 
     def target(self):
         return self.vertex
@@ -105,9 +121,32 @@ class HE:
         for hedge in self.cycle_hedges():
             yield hedge.vertex
 
-def make_halfedge_twins(v1, v2):
-    he1 = HE()
-    he2 = HE()
+    def is_on_proper_cycle(self):
+        for he in self.cycle_hedges():
+            if he == self.twin:
+                return False
+        return True
+
+    def is_on_clockwise_cycle(self):
+        path_cross = funcs.Vector(0,0,0)
+        for he in self.cycle_hedges():
+            v1 = funcs.vector_from_to(
+                he.source().point,
+                he.target().point)
+            v2 = funcs.vector_from_to(
+                he.next.source().point,
+                he.next.target().point)
+            path_cross = funcs.add_vectors(path_cross,
+                                           funcs.cross(v1, v2))
+
+        path_cross = funcs.unit(path_cross)
+        normal = funcs.unit(self.arrangement.plane.normal)
+        return path_cross != normal
+
+
+def make_halfedge_twins(arrangement, v1, v2):
+    he1 = HE(arrangement)
+    he2 = HE(arrangement)
 
     he1.vertex = v1
     he1.twin = he2
@@ -125,6 +164,7 @@ class Arrangement:
     def __init__(self, plane):
         self.plane = plane
         self.vertices = []
+        self.faces = []
 
     def add_vertex(self, point):
         v = self.get_vertex(point)
@@ -148,12 +188,35 @@ class Arrangement:
         if self._has_hedges_between(v1, v2):
             return
 
-        self._span_hedges_between(v1, v2)
+        he1, he2 = self._span_hedges_between(v1, v2)
+
+        if he1.is_on_proper_cycle():
+            if not he1.is_on_clockwise_cycle():
+                self._create_new_face_inside(he1)
+        if he2.is_on_proper_cycle():
+            if not he2.is_on_clockwise_cycle():
+                self._create_new_face_inside(he2)
+
+    def _remove_face(self, face):
+        self.faces.remove(face)
+        for e in face.hedge.cycle_hedges():
+            e.face = None
+
+    def _create_new_face_inside(self, he):
+        face = Face(self)
+        face.hedge = he
+
+        for e in he.cycle_hedges():
+            e.face = face
+
+        self.faces.append(face)
 
     def _has_hedges_between(self, v1, v2):
         return v1.has_in_immediate_neighborhood(v2)
 
     def _span_hedges_between(self, v1, v2):
-        he1, he2 = make_halfedge_twins(v1, v2)
+        he1, he2 = make_halfedge_twins(self, v1, v2)
         v1.add_incident_hedge(he1)
         v2.add_incident_hedge(he2)
+
+        return he1, he2
