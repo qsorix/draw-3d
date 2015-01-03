@@ -84,7 +84,13 @@ class ToolPull(Tool):
         if not self.length:
             return
 
-        self.wnd.walls.extend(self._shifted_walls(self.length))
+        # walls are created automatically when segments are added
+        # but i'm not yet sure if this should be this way.
+        # perhaps a tool like this should instead disable automation, since we
+        # can compute the walls easily here and it won't interfere with the rest
+        # of the project
+        #self.wnd.walls.extend(self._shifted_walls(self.length))
+
         for s in self._shifted_segments(self.length):
             self.wnd.add_segment(s)
         self.wnd.drawn_walls = []

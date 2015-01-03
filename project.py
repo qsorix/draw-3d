@@ -87,20 +87,24 @@ class Project:
                     planes.append(funcs.Plane(c, va.point))
 
         for p in planes:
-            walls = arrangement_on_a_wall(self, p)
+            try:
+                walls = arrangement_on_a_wall(self, p)
 
-            for new_wall in walls:
-                srtd1 = sorted(new_wall.vertices, key=lambda p: (p.x, p.y, p.z))
-                found = False
-                for w in self.walls:
-                    srtd2 = sorted(w.vertices, key=lambda p: (p.x, p.y, p.z))
-                    if srtd1 == srtd2:
-                        found = True
-                        break
-                if found:
-                    continue
-                else:
-                    self.walls.append(new_wall)
+                for new_wall in walls:
+                    srtd1 = sorted(new_wall.vertices, key=lambda p: (p.x, p.y, p.z))
+                    found = False
+                    for w in self.walls:
+                        srtd2 = sorted(w.vertices, key=lambda p: (p.x, p.y, p.z))
+                        if srtd1 == srtd2:
+                            found = True
+                            break
+                    if found:
+                        continue
+                    else:
+                        self.walls.append(new_wall)
+            except AssertionError as e:
+                print("AssertionError", e)
+                pass
 
     def _split_segment(self, segment, vertex):
         """split segment by adding a vertex in the middle"""
@@ -117,6 +121,9 @@ class Project:
         va = self.add_vertex(segment.a)
         vb = self.add_vertex(segment.b)
         vb_final = vb
+
+        if va in vb.neighbors:
+            return # segment is already there
 
         segments_to_remove = []
         segments_to_add = []
