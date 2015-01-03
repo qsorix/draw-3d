@@ -13,6 +13,13 @@ class Vertex:
                                      self.point.z)
     __repr__  = __str__
 
+    def get_next_this_hedge_would_get(self, he):
+        if not self.hedge:
+            return he.next
+
+        he_in, he_out = self._pick_insertion_point_cw(he.source().point)
+        return he_out
+
     def add_incident_hedge(self, he):
         assert he.target() == self
 
@@ -56,6 +63,11 @@ class Vertex:
         return d
 
     def _pick_insertion_point_cw(self, point):
+        print ("Looking for insertion point at vertex ", self.point)
+        print ("  existing neighbors:")
+        for n in self.cw_neighbors():
+            print("    ", n)
+        print ("  point to add", point)
         if self.degree() == 1:
             return self.hedge, self.hedge.twin
 
@@ -66,6 +78,7 @@ class Vertex:
 
             cpoint_v = funcs.vector_from_to(self.point, current.source().point)
             npoint_v = funcs.vector_from_to(self.point, next.source().point)
+            print ("  checking if fits between ", cpoint_v, " and ", npoint_v)
 
             if funcs.rotates_clockwise_3(cpoint_v, point_v, npoint_v,
                                          self.arrangement.plane):
@@ -188,7 +201,19 @@ class Arrangement:
         if self._has_hedges_between(v1, v2):
             return
 
-        he1, he2 = self._span_hedges_between(v1, v2)
+        he1, he2 = make_halfedge_twins(self, v1, v2)
+
+        # set these two before adding the edges
+        split_new_face = True or False
+        is_split_face_contained = True or False
+
+        he1_next_face = v1.get_next_this_hedge_would_get(he1).face
+        he2_next_face = v2.get_next_this_hedge_would_get(he2).face
+
+        if he1_next_face and he1_next_face == he2_next_face:
+            self._remove_face(he1_next_face)
+
+        self._span_hedges_between(v1, v2, he1, he2)
 
         if he1.is_on_proper_cycle():
             if not he1.is_on_clockwise_cycle():
@@ -214,9 +239,6 @@ class Arrangement:
     def _has_hedges_between(self, v1, v2):
         return v1.has_in_immediate_neighborhood(v2)
 
-    def _span_hedges_between(self, v1, v2):
-        he1, he2 = make_halfedge_twins(self, v1, v2)
+    def _span_hedges_between(self, v1, v2, he1, he2):
         v1.add_incident_hedge(he1)
         v2.add_incident_hedge(he2)
-
-        return he1, he2
