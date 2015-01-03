@@ -301,15 +301,125 @@ def test_holes_can_be_surrounded_by_bigger_holes_2():
     a.add_segment(S(p7, p8))
     a.add_segment(S(p8, p6))
 
+    print("----")
+    print(a.faces)
+    print(a.outer_face)
+    print("outer shapes:")
+    for ic in a.outer_face.inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
+    print("faces[0].inners:")
+    for ic in a.faces[0].inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
+    print("faces[1].inners:")
+    for ic in a.faces[1].inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
+    print("-- * * * --")
+
     a.add_segment(S(p3, p4))
+    print("----")
+    print(a.faces)
+    print(a.outer_face)
+    print("outer shapes:")
+    for ic in a.outer_face.inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
+    print("faces[0].inners:")
+    for ic in a.faces[0].inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
+    print("faces[1].inners:")
+    for ic in a.faces[1].inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
+    print("-- * * * --")
     a.add_segment(S(p4, p5))
     a.add_segment(S(p5, p3))
 
 
-    # we should get 3 faces, 2 of which contain 1 hole each
+    print("----")
     print(a.faces)
     print(a.outer_face)
+    print("outer shapes:")
+    for ic in a.outer_face.inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
+    print("faces[0].inners:")
+    for ic in a.faces[0].inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
+    print("faces[1].inners:")
+    for ic in a.faces[1].inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
+    print("faces[2].inners:")
+    for ic in a.faces[2].inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
 
+    # we should get 3 faces, 2 of which contain 1 hole each
+    assert_equals(len(a.faces), 3)
+    assert len(a.faces[0].inner_ccbs) <= 1
+    assert len(a.faces[1].inner_ccbs) <= 1
+    assert len(a.faces[2].inner_ccbs) <= 1
+    assert_equals(len(a.faces[0].inner_ccbs) +
+                  len(a.faces[1].inner_ccbs) +
+                  len(a.faces[2].inner_ccbs),
+                  2)
+
+def test_holes_can_be_surrounded_by_bigger_holes_3():
+    p0 = P( 0,  0, 0)
+    p1 = P(10,  0, 0)
+    p2 = P(10, 10, 0)
+
+    p3 = P( 2, 1, 0)
+    p4 = P( 9, 1, 0)
+    p5 = P( 9, 8, 0)
+
+    p6 = P( 4, 2, 0)
+    p7 = P( 7, 2, 0)
+    p8 = P( 7, 6, 0)
+
+    plane = Plane(V(0, 0, 1), p0)
+    a = Arrangement(plane)
+
+    # order is important, add from outside
+    a.add_segment(S(p0, p1))
+    a.add_segment(S(p1, p2))
+    a.add_segment(S(p2, p0))
+
+    a.add_segment(S(p3, p4))
+    a.add_segment(S(p4, p5))
+    a.add_segment(S(p5, p3))
+
+    a.add_segment(S(p6, p7))
+    a.add_segment(S(p7, p8))
+    a.add_segment(S(p8, p6))
+
+
+    print("----")
+    print(a.faces)
+    print(a.outer_face)
+    print("outer shapes:")
+    for ic in a.outer_face.inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
+    print("faces[0].inners:")
+    for ic in a.faces[0].inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
+    print("faces[1].inners:")
+    for ic in a.faces[1].inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
+    print("faces[2].inners:")
+    for ic in a.faces[2].inner_ccbs:
+        print(list(ic.cycle_vertices()))
+    print()
+
+    # we should get 3 faces, 2 of which contain 1 hole each
     assert_equals(len(a.faces), 3)
     assert len(a.faces[0].inner_ccbs) <= 1
     assert len(a.faces[1].inner_ccbs) <= 1

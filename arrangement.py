@@ -141,7 +141,7 @@ class Face:
         # point still may be inside of a hole
         for hole in self.inner_ccbs:
             proj_boundary = []
-            for p in self.hedge.cycle_vertices():
+            for p in hole.cycle_vertices():
                 proj_boundary.append(P(p.point.x, p.point.y, 0))
             res = funcs.is_point_in_polygon(proj_point, proj_boundary)
             if res:
@@ -247,6 +247,7 @@ class Arrangement:
                 face.add_isolated_vertex(v)
                 contained = True
                 break
+
         if not contained:
             self.outer_face.add_isolated_vertex(v)
             v.outer_face = self.outer_face
