@@ -196,3 +196,125 @@ def test_isolated_vertices_turn_into_holes_when_edges_are_added():
     assert_equals(v6.outer_face, None)
 
     assert_equals(len(a.faces[0].inner_ccbs), 1)
+
+def test_hole_connected_to_its_outer_ccb_is_no_longer_a_hole():
+    p0 = P( 0,  0, 0)
+    p1 = P(10,  0, 0)
+    p2 = P(10, 10, 0)
+    p3 = P( 0, 10, 0)
+
+    p5 = P( 2, 2, 0)
+    p6 = P( 2, 6, 0)
+    p7 = P( 6, 2, 0)
+
+    plane = Plane(V(0, 0, 1), p0)
+    a = Arrangement(plane)
+
+    # add the face
+    a.add_segment(S(p0, p1))
+    a.add_segment(S(p1, p2))
+    a.add_segment(S(p2, p3))
+    a.add_segment(S(p3, p0))
+
+    # add the hole
+    a.add_segment(S(p5, p6))
+    a.add_segment(S(p6, p7))
+    a.add_segment(S(p7, p5))
+
+    # check the setup
+    assert_equals(len(a.faces), 2)
+    assert_equals(len(a.faces[0].inner_ccbs), 1)
+
+    # now add the connecting segment
+    a.add_segment(S(p5, p0))
+
+    # hole should be gone
+    assert_equals(len(a.faces), 2)
+    assert_equals(len(a.faces[0].inner_ccbs), 0)
+
+def test_holes_can_be_surrounded_by_bigger_holes():
+    p0 = P( 0,  0, 0)
+    p1 = P(10,  0, 0)
+    p2 = P(10, 10, 0)
+
+    p3 = P( 2, 1, 0)
+    p4 = P( 9, 1, 0)
+    p5 = P( 9, 8, 0)
+
+    p6 = P( 4, 2, 0)
+    p7 = P( 7, 2, 0)
+    p8 = P( 7, 6, 0)
+
+    plane = Plane(V(0, 0, 1), p0)
+    a = Arrangement(plane)
+
+    # order is important, add from the inside
+    a.add_segment(S(p6, p7))
+    a.add_segment(S(p7, p8))
+    a.add_segment(S(p8, p6))
+
+    a.add_segment(S(p3, p4))
+    a.add_segment(S(p4, p5))
+    a.add_segment(S(p5, p3))
+
+    a.add_segment(S(p0, p1))
+    a.add_segment(S(p1, p2))
+    a.add_segment(S(p2, p0))
+
+    # we should get 3 faces, 2 of which contain 1 hole each
+    print(a.faces)
+    print(a.outer_face)
+    print("----")
+    print(a.faces[1].inner_ccbs)
+
+    assert_equals(len(a.faces), 3)
+    assert len(a.faces[0].inner_ccbs) <= 1
+    assert len(a.faces[1].inner_ccbs) <= 1
+    assert len(a.faces[2].inner_ccbs) <= 1
+    assert_equals(len(a.faces[0].inner_ccbs) +
+                  len(a.faces[1].inner_ccbs) +
+                  len(a.faces[2].inner_ccbs),
+                  2)
+
+def test_holes_can_be_surrounded_by_bigger_holes_2():
+    p0 = P( 0,  0, 0)
+    p1 = P(10,  0, 0)
+    p2 = P(10, 10, 0)
+
+    p3 = P( 2, 1, 0)
+    p4 = P( 9, 1, 0)
+    p5 = P( 9, 8, 0)
+
+    p6 = P( 4, 2, 0)
+    p7 = P( 7, 2, 0)
+    p8 = P( 7, 6, 0)
+
+    plane = Plane(V(0, 0, 1), p0)
+    a = Arrangement(plane)
+
+    # order is important, add from the middle
+    a.add_segment(S(p0, p1))
+    a.add_segment(S(p1, p2))
+    a.add_segment(S(p2, p0))
+
+    a.add_segment(S(p6, p7))
+    a.add_segment(S(p7, p8))
+    a.add_segment(S(p8, p6))
+
+    a.add_segment(S(p3, p4))
+    a.add_segment(S(p4, p5))
+    a.add_segment(S(p5, p3))
+
+
+    # we should get 3 faces, 2 of which contain 1 hole each
+    print(a.faces)
+    print(a.outer_face)
+
+    assert_equals(len(a.faces), 3)
+    assert len(a.faces[0].inner_ccbs) <= 1
+    assert len(a.faces[1].inner_ccbs) <= 1
+    assert len(a.faces[2].inner_ccbs) <= 1
+    assert_equals(len(a.faces[0].inner_ccbs) +
+                  len(a.faces[1].inner_ccbs) +
+                  len(a.faces[2].inner_ccbs),
+                  2)

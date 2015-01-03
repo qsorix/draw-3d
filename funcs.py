@@ -336,10 +336,10 @@ def rotates_clockwise_2(v1, v2, plane):
 
     result = c != n
 
-    if result:
-        print("clockwise from {} to {}".format(v1, v2))
-    else:
-        print("anti-clockwise from {} to {}".format(v1, v2))
+    # if result:
+    #     print("clockwise from {} to {}".format(v1, v2))
+    # else:
+    #     print("anti-clockwise from {} to {}".format(v1, v2))
     return result
 
 def rotates_clockwise_3(v1, v2, v3, plane):

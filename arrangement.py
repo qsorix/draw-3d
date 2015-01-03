@@ -68,11 +68,12 @@ class Vertex:
         return d
 
     def _pick_insertion_point_cw(self, point):
-        print ("Looking for insertion point at vertex ", self.point)
-        print ("  existing neighbors:")
-        for n in self.cw_neighbors():
-            print("    ", n)
-        print ("  point to add", point)
+        # print ("Looking for insertion point at vertex ", self.point)
+        # print ("  existing neighbors:")
+        # for n in self.cw_neighbors():
+        #     print("    ", n)
+        # print ("  point to add", point)
+
         if self.degree() == 1:
             return self.hedge, self.hedge.twin
 
@@ -83,7 +84,7 @@ class Vertex:
 
             cpoint_v = funcs.vector_from_to(self.point, current.source().point)
             npoint_v = funcs.vector_from_to(self.point, next.source().point)
-            print ("  checking if fits between ", cpoint_v, " and ", npoint_v)
+            #print ("  checking if fits between ", cpoint_v, " and ", npoint_v)
 
             if funcs.rotates_clockwise_3(cpoint_v, point_v, npoint_v,
                                          self.arrangement.plane):
@@ -114,8 +115,12 @@ class Face:
     def remove_isolated_vertex(self, v):
         self.isolated_vertices.remove(v)
 
-    def add_inner_ccb(self, he):
-        self.inner_ccbs.append(he)
+    def add_inner_ccb(self, hedge):
+        assert hedge
+        assert hedge.is_on_clockwise_cycle()
+        self.inner_ccbs.append(hedge)
+        for he in hedge.cycle_hedges():
+            he.face = self
 
     def contains_point(self, point):
         if not self.hedge:
@@ -128,7 +133,8 @@ class Face:
         for p in self.hedge.cycle_vertices():
             proj_boundary.append(P(p.point.x, p.point.y, 0))
 
-        return funcs.is_point_in_polygon(proj_point, proj_boundary)
+        res = funcs.is_point_in_polygon(proj_point, proj_boundary)
+        return res
 
     __repr__ = __str__
 
@@ -167,10 +173,11 @@ class HE:
             yield hedge.vertex
 
     def is_on_proper_cycle(self):
+
         for he in self.cycle_hedges():
-            if he == self.twin:
-                return False
-        return True
+            if he != self.twin:
+                return True
+        return False
 
     def is_on_clockwise_cycle(self):
         path_cross = funcs.Vector(0,0,0)
@@ -211,6 +218,8 @@ class Arrangement:
         self.vertices = []
         self.faces = []
 
+        self.outer_face = Face(self)
+
     def add_vertex(self, point):
         v = self.get_vertex(point)
         if v:
@@ -218,10 +227,16 @@ class Arrangement:
         v = Vertex(self, point)
         self.vertices.append(v)
 
+        contained = False
         for face in self.faces:
             if face.contains_point(point):
                 v.outer_face = face
                 face.add_isolated_vertex(v)
+                contained = True
+                break
+        if not contained:
+            self.outer_face.add_isolated_vertex(v)
+            v.outer_face = self.outer_face
 
         return v
 
@@ -265,6 +280,7 @@ class Arrangement:
         he2_next_face = v2.get_next_this_hedge_would_get(he2).face
 
         if he1_next_face and he1_next_face == he2_next_face:
+            print("removing face")
             self._remove_face(he1_next_face)
 
         self._span_hedges_between(v1, v2, he1, he2)
@@ -277,7 +293,7 @@ class Arrangement:
                 self._create_new_face_inside(he1)
 
         if he2.is_on_proper_cycle():
-            if not he2.is_on_clockwise_cycle():
+            if not he2.is_on_clockwise_cycle() and not he2.face:
                 self._create_new_face_inside(he2)
 
     def _remove_face(self, face):
@@ -292,7 +308,45 @@ class Arrangement:
         for e in he.cycle_hedges():
             e.face = face
 
+        parent = self.outer_face
+        for other_face in self.faces:
+            if other_face.contains_point(face.hedge.target().point):
+                parent = other_face
+                break
+        self._take_over_inner_ccbs_and_isolated_vertices(parent, face)
+
         self.faces.append(face)
+
+    def _take_over_inner_ccbs_and_isolated_vertices(self, parent, face):
+        print("_taking over")
+        # when a new face is formed, it's possible it covers and area where
+        # existing objects are
+        # in such case it should change the "parent" of those objects
+
+        inside, outside = [], []
+        for iv in parent.isolated_vertices:
+            if face.contains_point(iv.point):
+                inside.append(iv)
+            else:
+                outside.append(iv)
+        parent.isolated_vertices[:] = outside
+        face.isolated_vertices.extend(inside)
+
+        inside, outside = [], []
+        for ccb in parent.inner_ccbs:
+            print(list(ccb.cycle_vertices()))
+            # segments do not cross so if one point is inside the face,
+            # everything is
+            if face.contains_point(ccb.target().point):
+                inside.append(ccb)
+                print ("face ", face, "swallows", ccb.twin.face)
+            else:
+                print ("face ", face, "ignores", ccb.twin.face)
+                outside.append(ccb)
+        parent.inner_ccbs[:] = outside
+        for ccb in inside:
+            face.add_inner_ccb(ccb)
+
 
     def _has_hedges_between(self, v1, v2):
         return v1.has_in_immediate_neighborhood(v2)
