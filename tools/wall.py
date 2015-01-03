@@ -27,10 +27,12 @@ class ToolWall(Tool):
 
         if len(segs) <= 1:
             return
+        elif len(segs) == 2:
+            if (segs[-2].a == segs[-1].a or
+                segs[-2].a == segs[-1].b):
+                segs[-2] = S(segs[-2].b, segs[-2].a)
 
-        if segs[-2].a == segs[-1].a:
-            segs[-2] = S(segs[-2].b, segs[-2].a)
-        if segs[-2].b == segs[-1].b:
+        if (segs[-2].b == segs[-1].b):
             segs[-1] = S(segs[-1].b, segs[-1].a)
 
         print(segs)

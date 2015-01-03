@@ -112,5 +112,6 @@ class ToolPull(Tool):
         self.length = funcs.point_to_plane_distance(target_plane,
                                                     self.wall.vertices[0])
 
-        self.wnd.drawn_walls = self._shifted_walls(self.length)
-        self.wnd.drawn_segments = self._shifted_segments(self.length)
+        if self.length:
+            self.wnd.drawn_walls = self._shifted_walls(self.length)
+            self.wnd.drawn_segments = self._shifted_segments(self.length)
