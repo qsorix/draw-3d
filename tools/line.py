@@ -98,13 +98,7 @@ class ToolLine(Tool):
         snap = Snap()
         mx, my = pos
         axis_snap = False
-
         end = None
-        points = self.wnd.get_objects_pointed_at(mx, my, "psw")
-        if points:
-            end = points[0][1]
-            snap.color = purple
-            snap.indicators = [points[0][1]]
 
         if not end:
             end, c = self._snap_to_axis(self.segment_start, mx, my)
@@ -131,8 +125,17 @@ class ToolLine(Tool):
                             end = pp
                             snap.segments.append(S(end, p, gray))
 
+
+        if not end:
+            points = self.wnd.get_objects_pointed_at(mx, my, "psw")
+            if points:
+                end = points[0][1]
+                snap.color = purple
+                snap.indicators = [points[0][1]]
+
         if not end:
             end = self._free_point(mx, my)
+            snap.indicators = [end]
 
         return end, snap
 
@@ -143,6 +146,8 @@ class ToolLine(Tool):
             points = self.wnd.get_objects_pointed_at(mx, my, "psw")
             if points:
                 self.wnd.drawn_indicators = [points[0][1]]
+            else:
+                self.wnd.drawn_indicators = []
             return
 
         self.segment_end, snap = self._get_end(pos)
@@ -150,7 +155,7 @@ class ToolLine(Tool):
         if self.segment_start and self.segment_end:
             self.wnd.drawn_segments = [S(self.segment_start, self.segment_end, snap.color)]
             self.wnd.drawn_segments.extend(snap.segments)
-            self.wnd.indicators = snap.indicators
+            self.wnd.drawn_indicators = snap.indicators
 
             self.wnd.set_text("{0:.2f} cm".format(funcs.length(vector_from_to(self.segment_start,
                                                                      self.segment_end))))
