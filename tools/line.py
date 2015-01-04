@@ -72,8 +72,11 @@ class ToolLine(Tool):
 
         N = self.wnd.pick_plane_facing_camera().normal
 
-        end = funcs.vector_plane_intersection(view_direction.p0, view_direction.v, self.segment_start, N)
-        end = self._length_snap(self.segment_start, end)
+        if self.segment_start:
+            end = funcs.vector_plane_intersection(view_direction.p0, view_direction.v, self.segment_start, N)
+            end = self._length_snap(self.segment_start, end)
+        else:
+            end = funcs.vector_plane_intersection(view_direction.p0, view_direction.v, P(0,0,0), N)
         return end
 
     def activate(self):
@@ -84,9 +87,8 @@ class ToolLine(Tool):
         mx, my = pos
 
         if not self.segment_start:
-            points = self.wnd.get_objects_pointed_at(mx, my, "psw")
-            if points:
-                self.segment_start = points[0][1]
+            if self.possible_start:
+                self.segment_start = self.possible_start
 
         else:
             self.wnd.drawn_segments = []
@@ -145,9 +147,16 @@ class ToolLine(Tool):
         if not self.segment_start:
             points = self.wnd.get_objects_pointed_at(mx, my, "psw")
             if points:
-                self.wnd.drawn_indicators = [points[0][1]]
+                start = points[0][1]
+            else:
+                start = self._free_point(mx, my)
+
+            if start:
+                self.wnd.drawn_indicators = [start]
             else:
                 self.wnd.drawn_indicators = []
+
+            self.possible_start = start
             return
 
         self.segment_end, snap = self._get_end(pos)
