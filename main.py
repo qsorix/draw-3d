@@ -123,9 +123,9 @@ class Starter(PygameHelper):
         self.text = ""
 
         self.D = 500 # distance eye-screen in pixels
-        self.camera = P(6, 6, -20)
-        self.camera_angle = 0.1
-        self.camera_angle_vert = 0
+        self.camera = P(180, 120, -180)
+        self.camera_angle = -0.3
+        self.camera_angle_vert = 0.1
         self.pressed = set()
 
         self.tool = None
@@ -137,11 +137,11 @@ class Starter(PygameHelper):
         self.plain_rects = []
         self.walls = self.project.walls #[]
         self.drawn_walls = []
+        self.drawn_axis = []
 
-        self.add_segment(S(P( 0,  0, 0), P(10,  0, 0)))
-        self.add_segment(S(P(10,  0, 0), P(10, 10, 0)))
-        self.add_segment(S(P(10, 10, 0), P( 0, 10, 0)))
-        self.add_segment(S(P( 0, 10, 0), P( 0,  0, 0)))
+        self.drawn_axis.append(S(P(0, 0, 0), P(10000, 0, 0), red))
+        self.drawn_axis.append(S(P(0, 0, 0), P(0, 10000, 0), blue))
+        self.drawn_axis.append(S(P(0, 0, 0), P(0, 0, 10000), green))
 
         #put_cube(self.segments, self.walls, 40, 0, 40, 20, red)
         # put_cube(self.segments, self.walls, 40, 0, 40, 20, red)
@@ -481,6 +481,11 @@ class Starter(PygameHelper):
                 to_render.append(s)
 
         for s in self.drawn_segments:
+            s = self._project_segment(s)
+            if s:
+                to_render.append(s)
+
+        for s in self.drawn_axis:
             s = self._project_segment(s)
             if s:
                 to_render.append(s)
