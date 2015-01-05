@@ -83,36 +83,21 @@ def order_by_camera_distance_and_type(camera, objects):
 
 
 
-def put_cube(s, walls, x, y, z, w, c):
-    s.append(S(P(x, y, z), P(x+w, y, z), c))
-    s.append(S(P(x, y, z), P(x, y+w, z), c))
-    s.append(S(P(x, y+w, z), P(x+w, y+w, z), c))
-    s.append(S(P(x+w, y, z), P(x+w, y+w, z), c))
+def put_cube(self, x, y, z, w, c):
+    self.add_segment(S(P(x, y, z), P(x+w, y, z), c))
+    self.add_segment(S(P(x, y, z), P(x, y+w, z), c))
+    self.add_segment(S(P(x, y+w, z), P(x+w, y+w, z), c))
+    self.add_segment(S(P(x+w, y, z), P(x+w, y+w, z), c))
 
-    s.append(S(P(x+w, y, z), P(x+w, y, z+w), c))
-    s.append(S(P(x, y+w, z), P(x, y+w, z+w), c))
-    s.append(S(P(x, y, z), P(x, y, z+w), c))
-    s.append(S(P(x+w, y+w, z), P(x+w, y+w, z+w), c))
+    self.add_segment(S(P(x+w, y, z), P(x+w, y, z+w), c))
+    self.add_segment(S(P(x, y+w, z), P(x, y+w, z+w), c))
+    self.add_segment(S(P(x, y, z), P(x, y, z+w), c))
+    self.add_segment(S(P(x+w, y+w, z), P(x+w, y+w, z+w), c))
 
-    s.append(S(P(x, y, z+w), P(x+w, y, z+w), c))
-    s.append(S(P(x, y, z+w), P(x, y+w, z+w), c))
-    s.append(S(P(x, y+w, z+w), P(x+w, y+w, z+w), c))
-    s.append(S(P(x+w, y, z+w), P(x+w, y+w, z+w), c))
-
-    walls.append(Wall([P(x, y, z),
-                       P(x, y+w, z),
-                       P(x+w, y+w, z),
-                       P(x+w, y, z)]))
-
-    walls.append(Wall([P(x, y, z),
-                       P(x, y+w, z),
-                       P(x, y+w, z+w),
-                       P(x, y, z+w)]))
-
-    walls.append(Wall([P(x, y, z),
-                       P(x+w, y, z),
-                       P(x+w, y, z+w),
-                       P(x, y, z+w)]))
+    self.add_segment(S(P(x, y, z+w), P(x+w, y, z+w), c))
+    self.add_segment(S(P(x, y, z+w), P(x, y+w, z+w), c))
+    self.add_segment(S(P(x, y+w, z+w), P(x+w, y+w, z+w), c))
+    self.add_segment(S(P(x+w, y, z+w), P(x+w, y+w, z+w), c))
 
 class Starter(PygameHelper):
     def __init__(self):
@@ -145,21 +130,11 @@ class Starter(PygameHelper):
         self.drawn_axis.append(S(P(0, 0, 0), P(0, 10000, 0), blue))
         self.drawn_axis.append(S(P(0, 0, 0), P(0, 0, 10000), green))
 
-        #put_cube(self.segments, self.walls, 40, 0, 40, 20, red)
-        # put_cube(self.segments, self.walls, 40, 0, 40, 20, red)
-        # put_cube(self.segments, self.walls, -40, 0, 40, 20, green)
-        # put_cube(self.segments, self.walls, 40,  0, -40, 20, blue)
-        # put_cube(self.segments, self.walls, -40,  0, -40, 20, black)
-        #
-        # for a in range(0,10,10):
-        #     for b in range(0,10,10):
-        #         self.segments.append(S(P(a, b, 1), P(a, b, 70000), green))
-        #         self.segments.append(S(P(a, 1, b), P(a, 70000, b), blue))
-        #         self.segments.append(S(P(1, a, b), P(70000, a, b), red))
-        #
-        # self.segments.append(S(P(-1, 0, 0), P(1, 0, 0)))
-        # self.segments.append(S(P(0, -1, 0), P(0, 1, 0)))
-        # self.segments.append(S(P(0, 0, -1), P(0, 0, 1)))
+        #put_cube(self, 40, 0, 40, 20, red)
+        #put_cube(self, 40, 0, 40, 20, red)
+        #put_cube(self, -40, 0, 40, 20, green)
+        #put_cube(self, 40,  0, -40, 20, blue)
+        #put_cube(self, -40,  0, -40, 20, black)
 
     def set_text(self, text):
         self.text = text
