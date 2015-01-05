@@ -12,6 +12,10 @@ class ToolMouseZoom(Tool):
     # in radians/pixel
     ROTATION_SPEED = 0.003
 
+    # camera move speed. this should not be a constant actually, as it should
+    # depend on the distance to visible objects
+    PAN_SPEED = 0.5
+
     # move camera at least by this length, so it will pass through objects near
     # the screen plane
     MIN_MOVE = 1
@@ -47,13 +51,24 @@ class ToolMouseZoom(Tool):
         if not self._start_mouse_pos:
             return
 
-        angle = self.ROTATION_SPEED * (pos[0] - self._start_mouse_pos[0])
-        angle_vert = self.ROTATION_SPEED * (pos[1] - self._start_mouse_pos[1])
+        dx = (pos[0] - self._start_mouse_pos[0])
+        dy = (pos[1] - self._start_mouse_pos[1])
 
-        self.wnd.camera_angle = self._rotation_start_angle - angle
-        self.wnd.camera_angle_vert = self._rotation_start_angle_vert - angle_vert
+        if self.wnd.shift_down():
+            self.wnd._move_camera(-self.PAN_SPEED*dx, self.PAN_SPEED*dy, 0)
+
+        else:
+            angle = self.ROTATION_SPEED * dx
+            angle_vert = self.ROTATION_SPEED * dy
+
+            self.wnd.camera_angle += angle
+            self.wnd.camera_angle_vert += angle_vert
+
+        self._start_mouse_pos = pos
 
     def mouseUp(self, button, pos):
+        self._start_mouse_pos = None
+
         destination = self._get_mouse_target(pos)
 
         move = self.ZOOM_SPEED*funcs.vector_from_to(self.wnd.camera, destination)
