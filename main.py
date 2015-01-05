@@ -575,12 +575,9 @@ class Starter(PygameHelper):
                     x0, y0 = self._to_zero(a)
                     x1, y1 = self._to_zero(b)
                     if funcs.dist(x0, y0, x1, y1, mx, my) < tolerance:
-                        d = 0
-                        if abs(x0-x1) > abs(y0-y1) >= 0:
-                            d = (x0-mx) / (x0-x1)
-                        elif y0-y1:
-                            d = (y0-my) / (y0-y1)
-                        result.append((s,s.a+funcs.vector_from_to(s.a,s.b)*d))
+                        cp = funcs.closest_point_segment_ray(s, view_ray)
+                        if cp:
+                            result.append((s, cp))
 
         if 'w' in type:
             for w in self.walls:

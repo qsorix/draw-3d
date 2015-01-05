@@ -332,6 +332,45 @@ def get_axes_oriented_projection(plane, v):
     else:
         return vz
 
+def closest_point_segment_ray(segment, ray):
+    """Returns a point on the segment that is closest to the ray. If the point
+    falls outside of the segment, returns None as currently it is used to snap
+    to segments, and we don't want to snap to segments that are too far anywa."""
+
+    # first find closest point for infinite lines
+    u = vector_from_to(segment.a, segment.b)
+    p0 = segment.a
+
+    v = ray.v
+    q0 = ray.p0
+
+    # line1 === P(s) = p0 + s*u
+    # line2 === Q(t) = q0 + t*v
+
+    w0 = vector_from_to(q0, p0)
+
+    a = dot(u, u)
+    b = dot(u, v)
+    c = dot(v, v)
+    d = dot(u, w0)
+    e = dot(v, w0)
+
+    delta = a*c - b*b
+    if abs(delta) < 0.0001:
+        return None
+
+    # s closest, t closest
+    sc = (b*e - c*d) / delta
+    tc = (a*e - b*d) / delta
+
+    # now limit the closest point to be on the segment
+    if sc < 0:
+        return None
+    if sc > 1:
+        return None
+
+    return p0 + sc*u
+
 def rotates_clockwise_2(v1, v2, plane):
     c = unit(cross(v1, v2))
     n = unit(plane.normal)
