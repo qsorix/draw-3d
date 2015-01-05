@@ -14,6 +14,7 @@ from tools.line import ToolLine
 from tools.pull import ToolPull
 from tools.wall import ToolWall
 from tools.move import ToolMove
+from tools.mousezoom import ToolMouseZoom
 
 from objects import S, Wall
 
@@ -129,6 +130,7 @@ class Starter(PygameHelper):
         self.pressed = set()
 
         self.tool = None
+        self.mouse_zoom_tool = ToolMouseZoom(self)
         self._set_tool(ToolLine(self))
 
         self.segments = self.project.segments #[]
@@ -402,13 +404,22 @@ class Starter(PygameHelper):
         self.pressed.discard(key)
 
     def mouseDown(self, button, pos):
-        self.tool.mouseDown(button, pos)
+        if button == 1:
+            self.tool.mouseDown(button, pos)
+        else:
+            self.mouse_zoom_tool.mouseDown(button, pos)
 
     def mouseUp(self, button, pos):
-        self.tool.mouseUp(button, pos)
+        if button == 1:
+            self.tool.mouseUp(button, pos)
+        else:
+            self.mouse_zoom_tool.mouseUp(button, pos)
 
     def mouseMotion(self, buttons, pos, rel):
-        self.tool.mouseMotion(buttons, pos, rel)
+        if not buttons[1] and not buttons[2]:
+            self.tool.mouseMotion(buttons, pos, rel)
+        else:
+            self.mouse_zoom_tool.mouseMotion(buttons, pos, rel)
 
     def shift_down(self):
         if pygame.K_LSHIFT in self.pressed or pygame.K_RSHIFT in self.pressed:
